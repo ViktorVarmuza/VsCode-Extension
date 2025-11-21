@@ -1,0 +1,87 @@
+/* Základní reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Tělo formuláře */
+body {
+    padding: 20px;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* Hlavní nadpis */
+h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-align: center;
+}
+
+/* Label pro input */
+label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Textová pole */
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+/* Focus efekt pro input */
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: #007acc;
+    box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
+}
+
+/* Tlačítko přihlášení */
+button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007acc;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+/* Hover efekt pro tlačítko */
+button:hover {
+    background-color: #005fa3;
+}
+
+/* Error zpráva */
+#error {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #e63946;
+    text-align: center;
+}
+
+/* Pro menší displeje */
+@media (max-width: 400px) {
+    body {
+        padding: 15px;
+    }
+
+    button {
+        font-size: 14px;
+        padding: 10px;
+    }
+}

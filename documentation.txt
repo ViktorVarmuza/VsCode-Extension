@@ -1,0 +1,4 @@
+18.11 začátek vubec nevim jak to funguje
+
+20.11 přidání ikonky na sidebar, otevření provizorního okna, přihlašování k budoucí databázi, databáze: SharingCode, Krtecek_123
+21.11 práce na propojování základní databáze uživatelů přihlašování a registrace :D
