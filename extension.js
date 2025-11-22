@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const { checkAuth } = require('./auth/checkLogin');
 // const {signInWithEmail, getLoginHtml} = require('./auth/login');
 const {LoginCommand, RegisterCommand} = require('./commands/login-register');
+const {logOut} = require('./commands/logout');
 
 //hlavni slozka :D
 
@@ -27,10 +28,10 @@ function activate(context) {
 
             // ----- UŽIVATEL PŘIHLÁŠEN --------
             return [
-                { label: "📁 Moje projekty", command: "ext.openProjects" },
-                { label: "👥 Přátelé", command: "ext.openFriends" },
-                { label: "⚙️ Nastavení", command: "ext.settings" },
-                { label: "🚪 Odhlásit se", command: "ext.logout" },
+                { label: "📁 Moje projekty", command: "share.openProjects" },
+                { label: "👥 Přátelé", command: "share.openFriends" },
+                { label: "⚙️ Nastavení", command: "share.settings" },
+                { label: "🚪 Odhlásit se", command: "share.logout" },
             ];
         },
         
@@ -75,6 +76,7 @@ function activate(context) {
 
     context.subscriptions.push(LoginCommand(context.extensionUri, treeRefreshEvent, context));
     context.subscriptions.push(RegisterCommand(context.extensionUri, treeRefreshEvent, context));
+    context.subscriptions.push(logOut(context, context.extensionUri, treeRefreshEvent ));
 }
 
 function deactivate() { }

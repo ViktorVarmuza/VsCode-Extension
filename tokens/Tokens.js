@@ -7,5 +7,8 @@ function saveTokens(context, tokens) {
 function loadTokens(context) {
     return context.globalState.get('supabaseTokens');
 }
+function deleteTokens(context) {
+    context.globalState.update('supabaseTokens', null);
+}
 
-module.exports = { saveTokens, loadTokens };
+module.exports = { saveTokens, loadTokens, deleteTokens };
