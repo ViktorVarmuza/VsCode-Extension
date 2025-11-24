@@ -34,8 +34,9 @@ async function checkAuth(context) {
         saveTokens(context, {
             refresh_token: data.session.refresh_token,
             access_token: data.session.access_token
-        });
+        }, data.session.user.id);
     }
+    
     return true;
 }
 

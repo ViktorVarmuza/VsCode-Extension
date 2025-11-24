@@ -1,82 +1,91 @@
+const { online } = require('./auth/online');
 const vscode = require('vscode');
 const { checkAuth } = require('./auth/checkLogin');
-// const {signInWithEmail, getLoginHtml} = require('./auth/login');
-const {LoginCommand, RegisterCommand} = require('./commands/login-register');
-const {logOut} = require('./commands/logout');
+const { LoginCommand, RegisterCommand } = require('./commands/login-register');
+const { logOut } = require('./commands/logout');
+const { LookupUsers } = require('./commands/addFriend');
 
-//hlavni slozka :D
-
-
-
-//funkce co se vola když se zapne extension
 function activate(context) {
-     const treeRefreshEvent = new vscode.EventEmitter()
-    //sidebar provider rika jak ma vypadat sidebar
+
+
+
+    const treeRefreshEvent = new vscode.EventEmitter();
+
     const treeDataProvider = {
         onDidChangeTreeData: treeRefreshEvent.event,
 
-        async getChildren() {
-            const logged = await checkAuth(context);
+        async getChildren(element) {
 
-            if (!logged) {
-                // ----- UŽIVATEL NEPŘIHLÁŠEN -------
+            // 🟦 1️⃣ ROOT úroveň
+            if (!element) {
+                const logged = await checkAuth(context);
+
+                if (!logged) {
+                    return [
+                        { type: "root", label: "🔑 Přihlásit se", command: "share.login" },
+                        { type: "root", label: "📝 Registrovat se", command: "share.register" },
+                    ];
+                }
+                online(context, treeRefreshEvent);
                 return [
-                    { label: "🔑 Přihlásit se", command: "share.login" },
-                    { label: "📝 Registrovat se", command: "share.register" },
+                    { type: "folder", label: "📁 Moje projekty", collapsibleState: vscode.TreeItemCollapsibleState.Collapsed },
+                    { type: "root", label: "👥 Přátelé", collapsibleState: vscode.TreeItemCollapsibleState.Collapsed },
+                    { type: "root", label: "⚙️ Nastavení", command: "share.settings" },
+                    { type: "root", label: "🚪 Odhlásit se", command: "share.logout" },
+
                 ];
             }
 
-            // ----- UŽIVATEL PŘIHLÁŠEN --------
-            return [
-                { label: "📁 Moje projekty", command: "share.openProjects" },
-                { label: "👥 Přátelé", command: "share.openFriends" },
-                { label: "⚙️ Nastavení", command: "share.settings" },
-                { label: "🚪 Odhlásit se", command: "share.logout" },
-            ];
+            // 🟦 2️⃣ Rozbalení složky "Moje projekty"
+            if (element.type === "folder" && element.label.includes("Moje projekty")) {
+                return [
+                    { type: "project", label: "Projekt A", command: "share.openProject" },
+                    { type: "project", label: "Projekt B", command: "share.openProject" },
+                    { type: "project", label: "Projekt C", command: "share.openProject" },
+                ];
+            } else if (element.label.includes("Přátelé")) {
+                return [
+                    { type: "root", label: "➕ Přídat Přítele", command: "share.lookupUsers" }
+                ]
+
+
+            }
+
+            // 🟦 3️⃣ Ostatní položky nemají děti
+            return [];
         },
-        
+
         getTreeItem(element) {
-            const item = new vscode.TreeItem(
+
+            const treeItem = new vscode.TreeItem(
                 element.label,
-                vscode.TreeItemCollapsibleState.None
+                element.collapsibleState ?? vscode.TreeItemCollapsibleState.None
             );
-            item.command = {
-                title: element.label,
-                command: element.command
-            };
-            return item;
+
+            if (element.command) {
+                treeItem.command = {
+                    command: element.command,
+                    title: element.label,
+                    arguments: [element]  // → můžeš získat data projektu
+                };
+            }
+
+            return treeItem;
         }
-        
     };
 
-    //vyrvari ten sidebar podle toho co provider rekl
     vscode.window.createTreeView('mySidebarView', { treeDataProvider });
 
-
-    
-    context.subscriptions.push(
-        vscode.commands.registerCommand('myExtension.openWebview', () => {
-            const panel = vscode.window.createWebviewPanel(
-                'simpleWebview',
-                'Moje Webview',
-                vscode.ViewColumn.One,
-                { enableScripts: true }
-            );
-
-            panel.webview.html = `
-                <html>
-                <body>
-                    <h1>Ahoj z Webview!</h1>
-                    <p>Otevřeno kliknutím na ikonku v sidebaru.</p>
-                </body>
-                </html>
-            `;
-        })
-    );
-
+    // Commands
     context.subscriptions.push(LoginCommand(context.extensionUri, treeRefreshEvent, context));
     context.subscriptions.push(RegisterCommand(context.extensionUri, treeRefreshEvent, context));
-    context.subscriptions.push(logOut(context, context.extensionUri, treeRefreshEvent ));
+    context.subscriptions.push(logOut(context, context.extensionUri, treeRefreshEvent));
+    context.subscriptions.push(LookupUsers(context, treeRefreshEvent));
+
+    // Command pro otevírání projektu
+    context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {
+        vscode.window.showInformationMessage(`Otevírám projekt: ${item.label}`);
+    }));
 }
 
 function deactivate() { }

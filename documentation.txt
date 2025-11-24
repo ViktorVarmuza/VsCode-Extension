@@ -2,3 +2,5 @@
 
 20.11 přidání ikonky na sidebar, otevření provizorního okna, přihlašování k budoucí databázi, databáze: SharingCode, Krtecek_123
 21.11 práce na propojování základní databáze uživatelů přihlašování a registrace :D
+22.11 logout funkce
+23.11 odesilani od uzivatele na server ze je online, vyhledávání uzivatelů v poli
