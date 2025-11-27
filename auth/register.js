@@ -38,7 +38,7 @@ async function signUpWithEmail(email, password, username, context) {
     saveTokens(context, {
         refresh_token: data.session.refresh_token,
         access_token: data.session.access_token
-    });
+    }, data.user.id);
 
     if (insertError) {
         console.error('Chyba při ukládání profilu do tabulky users:', insertError.message);

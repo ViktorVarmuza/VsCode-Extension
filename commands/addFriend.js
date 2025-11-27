@@ -134,7 +134,14 @@ async function addFriend(context, username) {
     );
 }
 
-async function allFriendsRequests(context) {
+async function allFriendsRequests(context,treeRefreshEvent) {
+    const login = await checkAuth(context);
+
+    if (!login) {
+        treeRefreshEvent.fire();
+        return;
+    }
+
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
     const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
@@ -253,8 +260,72 @@ function handleFriendRequest(context, treeRefreshEvent) {
     context.subscriptions.push(disposable);
 }
 
+async function getAllFriends(context, treeRefreshEvent) {
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+
+    const userId = await loadUserId(context);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const login = await checkAuth(context);
+
+    if (!login) {
+        treeRefreshEvent.fire();
+        return;
+    }
+
+    const { data: friends, error } = await supabase
+        .from('friends')
+        .select('*')
+        .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+
+    if (error) {
+        vscode.window.showErrorMessage("Chyba při načítání přátel.");
+        return [];
+    }
+
+    let allFriends = [];
+
+    for (let f of friends) {
+        const { data: friendUser, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', f.user_id === userId ? f.friend_id : f.user_id)
+            .single();
+
+        allFriends.push({
+            type: "info",
+            label: friendUser.username,
+            command: 'share.openFriend',
+            arguments: [{ Friend: friendUser }]
+        })  // <- zabaleno do jednoho objektu
+
+    }
+
+    return allFriends;
+
+}
 
 
-module.exports = { LookupUsers, addFriend, allFriendsRequests, handleFriendRequest };
+function openFriend(context) {
+    const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
+        const { Friend } = args;
+        vscode.window.showInformationMessage(`Otevřen profil přítele: ${Friend.username}`);
+
+        const panel = vscode.window.createWebviewPanel(
+            'friend-panel',
+            `Profil přítele: ${Friend.username}`,
+            vscode.ViewColumn.Two,
+            { enableScripts: true }
+        );
+        
+
+    })
+
+
+}
+
+module.exports = { LookupUsers, addFriend, allFriendsRequests, handleFriendRequest, getAllFriends, openFriend };
 
 

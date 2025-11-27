@@ -6,7 +6,7 @@ const { online } = require('./auth/online');
 
 const { LoginCommand, RegisterCommand } = require('./commands/login-register');
 const { logOut } = require('./commands/logout');
-const { LookupUsers, allFriendsRequests, handleFriendRequest } = require('./commands/addFriend');
+const { LookupUsers, allFriendsRequests, handleFriendRequest, getAllFriends, openFriend } = require('./commands/addFriend');
 
 const path = require("path");
 const fs = require("fs");
@@ -61,19 +61,23 @@ function activate(context) {
 
             // Přátelé root
             if (element.type === "friendsRoot") {
+                const friends = await getAllFriends(context, treeRefreshEvent);
+
                 return [
                     { type: "root", label: "➕ Přidat přítele", command: "share.lookupUsers" },
                     {
                         type: "friendRequestsRoot",
                         label: "📨 Žádosti o přátelství",
                         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
-                    }
+                    },
+                    ...friends
                 ];
             }
 
+
             // Žádosti o přátelství
             if (element.type === "friendRequestsRoot") {
-                const requests = await allFriendsRequests(context);
+                const requests = await allFriendsRequests(context, treeRefreshEvent);
                 if (requests.length > 0) {
                     return requests;
                 } else {
@@ -118,7 +122,7 @@ function activate(context) {
     context.subscriptions.push(logOut(context, context.extensionUri, treeRefreshEvent));
     context.subscriptions.push(LookupUsers(context, treeRefreshEvent));
     context.subscriptions.push(handleFriendRequest(context, treeRefreshEvent));
-
+    context.subscriptions.push(openFriend(context));
 
     // Project opener
     context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {

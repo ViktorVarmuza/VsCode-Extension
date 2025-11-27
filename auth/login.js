@@ -35,7 +35,7 @@ async function signInWithEmail(email, password, context) {
     saveTokens(context, {
         refresh_token: data.session.refresh_token,
         access_token: data.session.access_token
-    });
+    }, data.user.id);
 
     console.log('Uživatel přihlášen, id:', data.user.id);
 
