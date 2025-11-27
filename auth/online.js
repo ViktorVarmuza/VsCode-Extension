@@ -38,8 +38,6 @@ async function online(context, treeRefreshEvent) {
 
         if (error) {
             console.error("Update error:", error);
-        } else {
-            console.log("Uživatel online aktualizován:", user.id);
         }
     }
 

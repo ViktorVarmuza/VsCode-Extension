@@ -5,15 +5,13 @@ const path = require('path');
 
 async function checkAuth(context) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
-
-
     const key_path = path.join(__dirname, '../key.key');
     const supabaseAnonKey = fs.readFileSync(key_path, 'utf8').trim();
 
     const tokens = loadTokens(context);
-    console.log("Uložené tokeny:", tokens);
 
-    if (!tokens || !tokens.refresh_token) {
+    if (!tokens || !tokens.refresh_token || !tokens.access_token) {
+        console.log("❌ Žádné tokeny – uživatel není přihlášen");
         return false;
     }
 
@@ -21,22 +19,22 @@ async function checkAuth(context) {
 
     const { data, error } = await supabase.auth.setSession({
         refresh_token: tokens.refresh_token,
-        access_token: tokens.access_token || "dummy"
+        access_token: tokens.access_token
     });
 
     if (error) {
-        console.log("Session obnovena selhala:", error.message);
+        console.log("❌ Session obnovena selhala:", error.message);
         return false;
     }
 
-    // uložíme novou session s novými tokeny
     if (data.session) {
         saveTokens(context, {
             refresh_token: data.session.refresh_token,
             access_token: data.session.access_token
         }, data.session.user.id);
     }
-    
+
+    console.log("✅ Session obnovena");
     return true;
 }
 

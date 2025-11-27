@@ -134,7 +134,7 @@ async function addFriend(context, username) {
     );
 }
 
-async function allFriendsRequests(context,treeRefreshEvent) {
+async function allFriendsRequests(context, treeRefreshEvent) {
     const login = await checkAuth(context);
 
     if (!login) {
@@ -254,7 +254,7 @@ function handleFriendRequest(context, treeRefreshEvent) {
             );
         }
 
-        treeRefreshEvent.fire();
+        
     });
 
     context.subscriptions.push(disposable);
@@ -316,10 +316,15 @@ function openFriend(context) {
         const panel = vscode.window.createWebviewPanel(
             'friend-panel',
             `Profil přítele: ${Friend.username}`,
-            vscode.ViewColumn.Two,
+            vscode.ViewColumn.Beside,  // otevře vedle aktivního editoru
             { enableScripts: true }
         );
-        
+
+        panel.webview.html = '';
+        panel.reveal(vscode.ViewColumn.Beside); // zajistí, že se panel opravdu zobrazí
+
+
+
 
     })
 
