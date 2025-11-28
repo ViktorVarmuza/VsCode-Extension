@@ -11,11 +11,11 @@ const { LookupUsers, allFriendsRequests, handleFriendRequest, getAllFriends, ope
 const path = require("path");
 const fs = require("fs");
 
-const { friends_session } = require('./sessions/friendsSessions');
+const { watchFriendsTable, watchRequestTable } = require('./sessions/Sessions');
 
 
 function activate(context) {
-    
+
     const treeRefreshEvent = new vscode.EventEmitter();
 
     // ------------------------------
@@ -24,6 +24,12 @@ function activate(context) {
     const friendsRoot = {
         type: "friendsRoot",
         label: "👥 Přátelé",
+        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+    };
+    const friendRequestsRoot = {
+        type: "friendRequestsRoot",
+        label: "📨 Žádosti",
+        description: "5 nových ",
         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
     };
 
@@ -42,6 +48,8 @@ function activate(context) {
                     ];
                 }
 
+                watchFriendsTable(context, treeRefreshEvent, friendsRoot);
+                watchRequestTable(context, treeRefreshEvent, friendsRoot);
                 online(context);
 
                 return [
@@ -55,25 +63,31 @@ function activate(context) {
             // Přátelé
             if (element.type === "friendsRoot") {
                 const friends = await getAllFriends(context, treeRefreshEvent);
+                const requests = await allFriendsRequests(context, treeRefreshEvent);
+
+                // uložíme do friendRequestsRoot nejen description, ale i data
+                friendRequestsRoot.description = requests.length > 0 ? `${requests.length}` : "";
+                friendRequestsRoot.requestsData = requests; // ← uložené jako pole
 
                 return [
                     { type: "root", label: "➕ Přidat přítele", command: "share.lookupUsers" },
-                    {
-                        type: "friendRequestsRoot",
-                        label: "📨 Žádosti o přátelství",
-                        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
-                    },
+                    friendRequestsRoot,
                     ...friends
                 ];
             }
 
+
+
             // Žádosti o přátelství
             if (element.type === "friendRequestsRoot") {
-                const requests = await allFriendsRequests(context, treeRefreshEvent);
+                // použijeme už uložené requestsData místo opětovného dotazu
+                const requests = element.requestsData || [];
                 return requests.length > 0
                     ? requests
-                    : [{ type: "info", label: "Žádné nové žádosti o přátelství." }];
+                    : [{ type: "info", label: "Žádné nové žádosti o přátelství.", collapsibleState: vscode.TreeItemCollapsibleState.None }];
             }
+
+
 
             // Ostatní
             return [];
@@ -84,7 +98,9 @@ function activate(context) {
                 element.label,
                 element.collapsibleState ?? vscode.TreeItemCollapsibleState.None
             );
-
+            if (element.description) {
+                treeItem.description = element.description;
+            }
             if (element.command) {
                 treeItem.command = {
                     command: element.command,
@@ -98,8 +114,7 @@ function activate(context) {
     };
 
 
-    
-    friends_session(context, treeRefreshEvent, friendsRoot);
+
 
 
     // Create the actual tree view

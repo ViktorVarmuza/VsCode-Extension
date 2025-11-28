@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
-
+const { getFriendHtml } = require('../view/friend');
 
 function LookupUsers(context, treeRefreshEvent) {
     const Register_metoda = vscode.commands.registerCommand('share.lookupUsers', async () => {
@@ -47,7 +47,6 @@ function LookupUsers(context, treeRefreshEvent) {
             const selected = quickPick.selectedItems[0];
             if (selected) {
                 addFriend(context, selected.label);
-                treeRefreshEvent.fire();
             }
             quickPick.hide();
         });
@@ -187,8 +186,6 @@ async function allFriendsRequests(context, treeRefreshEvent) {
         });
 
 
-
-
     }
     return requestsWithUsernames;
 
@@ -254,7 +251,7 @@ function handleFriendRequest(context, treeRefreshEvent) {
             );
         }
 
-        
+
     });
 
     context.subscriptions.push(disposable);
@@ -308,27 +305,36 @@ async function getAllFriends(context, treeRefreshEvent) {
 }
 
 
+let friendPanel = null; // uložíme instanci webview panelu globálně
+
 function openFriend(context) {
     const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
         const { Friend } = args;
-        vscode.window.showInformationMessage(`Otevřen profil přítele: ${Friend.username}`);
 
-        const panel = vscode.window.createWebviewPanel(
-            'friend-panel',
-            `Profil přítele: ${Friend.username}`,
-            vscode.ViewColumn.Beside,  // otevře vedle aktivního editoru
-            { enableScripts: true }
-        );
+        if (friendPanel) {
+            // Pokud panel existuje, jen aktualizujeme obsah a přepneme na něj
+            friendPanel.title = `Profil přítele: ${Friend.username}`;
+            friendPanel.webview.html = getFriendHtml(Friend);
+            friendPanel.reveal(vscode.ViewColumn.Beside);
+        } else {
+            // Pokud panel ještě neexistuje, vytvoříme nový
+            friendPanel = vscode.window.createWebviewPanel(
+                'friend-panel',
+                `Profil přítele: ${Friend.username}`,
+                vscode.ViewColumn.Beside,
+                { enableScripts: true }
+            );
 
-        panel.webview.html = '';
-        panel.reveal(vscode.ViewColumn.Beside); // zajistí, že se panel opravdu zobrazí
+            friendPanel.webview.html = getFriendHtml(Friend);
 
+            // když uživatel zavře panel, vymažeme referenci
+            friendPanel.onDidDispose(() => {
+                friendPanel = null;
+            });
+        }
+    });
 
-
-
-    })
-
-
+    context.subscriptions.push(disposable);
 }
 
 module.exports = { LookupUsers, addFriend, allFriendsRequests, handleFriendRequest, getAllFriends, openFriend };
