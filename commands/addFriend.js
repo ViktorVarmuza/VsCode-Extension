@@ -1,3 +1,4 @@
+
 const { loadTokens, loadUserId } = require('../tokens/Tokens');
 const { checkAuth } = require('../auth/checkLogin');
 const path = require('path');
@@ -5,6 +6,7 @@ const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { getFriendHtml } = require('../view/friend');
+const { sendMessage } = require('./sendMessage');
 
 function LookupUsers(context, treeRefreshEvent) {
     const Register_metoda = vscode.commands.registerCommand('share.lookupUsers', async () => {
@@ -305,19 +307,23 @@ async function getAllFriends(context, treeRefreshEvent) {
 }
 
 
-let friendPanel = null; // uložíme instanci webview panelu globálně
+
+const friendPanels = new Map();
+
 
 function openFriend(context, extensionUri) {
     const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
         const { Friend, chatId } = args;
 
-        if (friendPanel) {
-            // Pokud panel existuje, jen aktualizujeme obsah a přepneme na něj
+        let friendPanel;
+        if (friendPanels.has(chatId)) {
+            // Panel pro tento chat už existuje
+            friendPanel = friendPanels.get(chatId);
             friendPanel.title = `Profil přítele: ${Friend.username}`;
-            friendPanel.webview.html = getFriendHtml(Friend, extensionUri, friendPanel.webview);
+            friendPanel.webview.html = await getFriendHtml(Friend, extensionUri, friendPanel.webview, chatId, context);
             friendPanel.reveal(vscode.ViewColumn.Beside);
         } else {
-            // Pokud panel ještě neexistuje, vytvoříme nový
+            // Nový panel
             friendPanel = vscode.window.createWebviewPanel(
                 'friend-panel',
                 `Profil přítele: ${Friend.username}`,
@@ -325,17 +331,26 @@ function openFriend(context, extensionUri) {
                 { enableScripts: true }
             );
 
-            friendPanel.webview.html = getFriendHtml(Friend, extensionUri, friendPanel.webview);
+            friendPanel.webview.html = await getFriendHtml(Friend, extensionUri, friendPanel.webview, chatId, context);
+            friendPanels.set(chatId, friendPanel);
 
-            // když uživatel zavře panel, vymažeme referenci
             friendPanel.onDidDispose(() => {
-                friendPanel = null;
+                friendPanels.delete(chatId);
             });
         }
+
+        friendPanel.webview.onDidReceiveMessage(async (message) => {
+            if (message.type === 'sendMessage') {
+                sendMessage(context, chatId, message.message);
+            }
+        });
+
+        context.subscriptions.push(friendPanel);
     });
 
     context.subscriptions.push(disposable);
 }
+
 
 module.exports = { LookupUsers, addFriend, allFriendsRequests, handleFriendRequest, getAllFriends, openFriend };
 

@@ -11,7 +11,7 @@ const { LookupUsers, allFriendsRequests, handleFriendRequest, getAllFriends, ope
 const path = require("path");
 const fs = require("fs");
 
-const { watchFriendsTable, watchRequestTable } = require('./sessions/Sessions');
+const { watchFriendsTable, watchRequestTable, watchMessageTable } = require('./sessions/Sessions');
 
 
 function activate(context) {
@@ -50,6 +50,7 @@ function activate(context) {
 
                 watchFriendsTable(context, treeRefreshEvent, friendsRoot);
                 watchRequestTable(context, treeRefreshEvent, friendsRoot);
+                
                 online(context);
 
                 return [

@@ -79,4 +79,47 @@ async function watchRequestTable(context, treeRefreshEvent, friendsRoot) {
 
 }
 
-module.exports = { watchFriendsTable, watchRequestTable };
+async function watchMessageTable(context, friendPanels) {
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const userId = await loadUserId(context);
+
+    const channel = supabase.channel('messages_changes')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'messages'
+            },
+            (payload) => {
+                const message = payload.new;
+
+                // ignorujeme zprávy od sebe
+                if (message.sender_id === userId) return;
+
+                // pokud máme otevřený panel pro chat_id, pošleme zprávu
+                const panel = friendPanels.get(message.chat_id);
+                if (panel) {
+                    panel.webview.postMessage({
+                        type: 'newMessage',
+                        message
+                    });
+                }
+            }
+        );
+
+    channel.subscribe();
+
+    context.subscriptions.push({
+        dispose: () => supabase.removeChannel(channel)
+    });
+
+    return channel;
+}
+
+
+module.exports = { watchFriendsTable, watchRequestTable, watchMessageTable };
