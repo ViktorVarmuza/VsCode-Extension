@@ -295,7 +295,7 @@ async function getAllFriends(context, treeRefreshEvent) {
             type: "info",
             label: friendUser.username,
             command: 'share.openFriend',
-            arguments: [{ Friend: friendUser }]
+            arguments: [{ Friend: friendUser, chatId: f.id }]
         })  // <- zabaleno do jednoho objektu
 
     }
@@ -307,14 +307,14 @@ async function getAllFriends(context, treeRefreshEvent) {
 
 let friendPanel = null; // uložíme instanci webview panelu globálně
 
-function openFriend(context) {
+function openFriend(context, extensionUri) {
     const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
-        const { Friend } = args;
+        const { Friend, chatId } = args;
 
         if (friendPanel) {
             // Pokud panel existuje, jen aktualizujeme obsah a přepneme na něj
             friendPanel.title = `Profil přítele: ${Friend.username}`;
-            friendPanel.webview.html = getFriendHtml(Friend);
+            friendPanel.webview.html = getFriendHtml(Friend, extensionUri, friendPanel.webview);
             friendPanel.reveal(vscode.ViewColumn.Beside);
         } else {
             // Pokud panel ještě neexistuje, vytvoříme nový
@@ -325,7 +325,7 @@ function openFriend(context) {
                 { enableScripts: true }
             );
 
-            friendPanel.webview.html = getFriendHtml(Friend);
+            friendPanel.webview.html = getFriendHtml(Friend, extensionUri, friendPanel.webview);
 
             // když uživatel zavře panel, vymažeme referenci
             friendPanel.onDidDispose(() => {

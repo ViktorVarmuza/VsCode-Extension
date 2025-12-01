@@ -129,7 +129,7 @@ function activate(context) {
     context.subscriptions.push(logOut(context, context.extensionUri, treeRefreshEvent));
     context.subscriptions.push(LookupUsers(context, treeRefreshEvent));
     context.subscriptions.push(handleFriendRequest(context, treeRefreshEvent));
-    context.subscriptions.push(openFriend(context));
+    context.subscriptions.push(openFriend(context, context.extensionUri));
 
     // Project opener
     context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {
