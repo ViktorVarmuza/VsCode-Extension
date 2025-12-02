@@ -6,7 +6,7 @@ const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { getFriendHtml } = require('../view/friend');
-const { sendMessage } = require('./sendMessage');
+const { sendMessage, newMessage } = require('./sendMessage');
 
 function LookupUsers(context, treeRefreshEvent) {
     const Register_metoda = vscode.commands.registerCommand('share.lookupUsers', async () => {
@@ -287,6 +287,7 @@ async function getAllFriends(context, treeRefreshEvent) {
     let allFriends = [];
 
     for (let f of friends) {
+        const new_chats = await newMessage(f.id, userId);
         const { data: friendUser, error } = await supabase
             .from('users')
             .select('*')
@@ -296,6 +297,7 @@ async function getAllFriends(context, treeRefreshEvent) {
         allFriends.push({
             type: "info",
             label: friendUser.username,
+            description: new_chats > 0 ? `💬 ${new_chats} nových zpráv` : "",
             command: 'share.openFriend',
             arguments: [{ Friend: friendUser, chatId: f.id }]
         })  // <- zabaleno do jednoho objektu
@@ -308,10 +310,10 @@ async function getAllFriends(context, treeRefreshEvent) {
 
 
 
-const friendPanels = new Map();
 
 
-function openFriend(context, extensionUri) {
+
+function openFriend(context, extensionUri, friendPanels) {
     const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
         const { Friend, chatId } = args;
 
@@ -328,7 +330,7 @@ function openFriend(context, extensionUri) {
                 'friend-panel',
                 `Profil přítele: ${Friend.username}`,
                 vscode.ViewColumn.Beside,
-                { enableScripts: true }
+                { enableScripts: true },
             );
 
             friendPanel.webview.html = await getFriendHtml(Friend, extensionUri, friendPanel.webview, chatId, context);
@@ -341,7 +343,7 @@ function openFriend(context, extensionUri) {
 
         friendPanel.webview.onDidReceiveMessage(async (message) => {
             if (message.type === 'sendMessage') {
-                sendMessage(context, chatId, message.message);
+                sendMessage(context, chatId, message.message );
             }
         });
 

@@ -37,17 +37,21 @@ async function getAllMessages(context, chatId) {
         .order('created_at', { ascending: true });
 
 
+    const { data: updated } = await supabase
+        .from('messages')
+        .update({ is_seen: true })
+        .eq('chat_id', chatId)
+        .eq('is_seen', false)
+        .neq('sender_id', userId);
+
+
     return data;
 }
 
-async function getChatHtml(context, username, chatId) {
-
+async function generateChatHtml(context, username, chat) {
     const userId = await loadUserId(context);
-    const chats = await getAllMessages(context, chatId);
 
-    let chatListHtml = '';
-    chats.forEach(chat => {
-        chatListHtml += `<div class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
+    return `<div class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
     <div class="messageMeta">
         <span class="sender">${chat.sender_id == userId ? 'Ty' : username}</span>
         <span class="time">${timeAgo(chat.created_at)}</span>
@@ -56,13 +60,39 @@ async function getChatHtml(context, username, chatId) {
         ${chat.content}
     </div>
     </div>`;
-    })
+}
+
+async function getChatHtml(context, username, chatId) {
+    const userId = await loadUserId(context);
+    const chats = await getAllMessages(context, chatId);
+
+    let chatListHtml = '';
+
+    for (const chat of chats) {
+        chatListHtml += await generateChatHtml(context, username, chat);
+    }
 
     return chatListHtml;
+}
+
+async function newMessage(chatId, userId) {
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
 
+    const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('chat_id', chatId)
+        .neq('sender_id', userId)
+        .eq('is_seen', false)
+
+    return data.length;
 }
 
 
+module.exports = { sendMessage, getAllMessages, getChatHtml, generateChatHtml, newMessage };
 
-module.exports = { sendMessage, getAllMessages, getChatHtml };

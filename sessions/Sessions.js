@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { loadTokens, loadUserId } = require('../tokens/Tokens');
 const path = require("path");
 const fs = require("fs");
-
+const { generateChatHtml } = require("../commands/sendMessage");
 async function watchFriendsTable(context, treeRefreshEvent, friendsRoot) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
@@ -79,7 +79,7 @@ async function watchRequestTable(context, treeRefreshEvent, friendsRoot) {
 
 }
 
-async function watchMessageTable(context, friendPanels) {
+async function watchMessageTable(context, friendPanels, friendRoot, treeRefreshEvent) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
     const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
@@ -95,27 +95,57 @@ async function watchMessageTable(context, friendPanels) {
                 schema: 'public',
                 table: 'messages'
             },
-            (payload) => {
+            async (payload) => {
                 const message = payload.new;
-
                 // ignorujeme zprávy od sebe
                 if (message.sender_id === userId) return;
 
                 // pokud máme otevřený panel pro chat_id, pošleme zprávu
                 const panel = friendPanels.get(message.chat_id);
+                friendPanels.has
                 if (panel) {
                     panel.webview.postMessage({
                         type: 'newMessage',
                         message
                     });
                 }
+
+                // automatický refresh stromu
+                treeRefreshEvent.fire(friendRoot);
             }
         );
 
+
+
     channel.subscribe();
+
+
+    const channel2 = supabase.channel('messages_updates')
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'messages'
+            },
+            (payload) => {
+                const message = payload.new;
+
+                // ignorujeme zprávy od sebe
+                if (message.sender_id === userId) return;
+
+                treeRefreshEvent.fire(friendRoot);
+            }
+        );
+
+    channel2.subscribe();
 
     context.subscriptions.push({
         dispose: () => supabase.removeChannel(channel)
+    });
+
+    context.subscriptions.push({
+        dispose: () => supabase.removeChannel(channel2)
     });
 
     return channel;

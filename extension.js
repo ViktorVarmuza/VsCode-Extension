@@ -15,6 +15,7 @@ const { watchFriendsTable, watchRequestTable, watchMessageTable } = require('./s
 
 
 function activate(context) {
+    const friendPanels = new Map();
 
     const treeRefreshEvent = new vscode.EventEmitter();
 
@@ -50,7 +51,7 @@ function activate(context) {
 
                 watchFriendsTable(context, treeRefreshEvent, friendsRoot);
                 watchRequestTable(context, treeRefreshEvent, friendsRoot);
-                
+                watchMessageTable(context, friendPanels, friendsRoot, treeRefreshEvent);
                 online(context);
 
                 return [
@@ -65,7 +66,7 @@ function activate(context) {
             if (element.type === "friendsRoot") {
                 const friends = await getAllFriends(context, treeRefreshEvent);
                 const requests = await allFriendsRequests(context, treeRefreshEvent);
-
+            
                 // uložíme do friendRequestsRoot nejen description, ale i data
                 friendRequestsRoot.description = requests.length > 0 ? `${requests.length}` : "";
                 friendRequestsRoot.requestsData = requests; // ← uložené jako pole
@@ -130,7 +131,7 @@ function activate(context) {
     context.subscriptions.push(logOut(context, context.extensionUri, treeRefreshEvent));
     context.subscriptions.push(LookupUsers(context, treeRefreshEvent));
     context.subscriptions.push(handleFriendRequest(context, treeRefreshEvent));
-    context.subscriptions.push(openFriend(context, context.extensionUri));
+    context.subscriptions.push(openFriend(context, context.extensionUri, friendPanels));
 
     // Project opener
     context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {
