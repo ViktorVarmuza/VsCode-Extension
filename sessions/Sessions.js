@@ -97,16 +97,21 @@ async function watchMessageTable(context, friendPanels, friendRoot, treeRefreshE
             },
             async (payload) => {
                 const message = payload.new;
-                // ignorujeme zprávy od sebe
-                if (message.sender_id === userId) return;
+                // ignorujeme zprávy od seb
 
                 // pokud máme otevřený panel pro chat_id, pošleme zprávu
                 const panel = friendPanels.get(message.chat_id);
                 if (panel) {
                     panel.webview.postMessage({
                         type: 'newMessage',
-                        message: message
+                        message: message,
+                        sender: message.sender_id === userId ? "sent" : "received"
                     });
+
+                    if( userId !== message.sender_id){
+                        vscode.window.showInformationMessage("Někdo ti poslal zprávu :D")
+
+                    }
 
                     const { data, error } = await supabase
                         .from('messages')

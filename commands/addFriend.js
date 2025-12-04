@@ -343,7 +343,7 @@ function openFriend(context, extensionUri, friendPanels) {
 
         friendPanel.webview.onDidReceiveMessage(async (message) => {
             if (message.type === 'sendMessage') {
-                sendMessage(context, chatId, message.message );
+                sendMessage(context, chatId, message.message, message.attachmentPath, message.attachmentType);
             }
         });
 

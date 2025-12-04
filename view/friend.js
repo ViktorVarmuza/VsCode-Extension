@@ -95,8 +95,8 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
         }
 
         // Přidání zprávy do DOM
-        function addMessageToDOM(content, senderId, createdAt, id) {
-            const sent = senderId === userId;
+        function addMessageToDOM(content, sender, createdAt, id) {
+            const sent = sender == "sent" ? true : false;
             const msgDiv = document.createElement("div");
             msgDiv.id = 'chat-' + id;
             msgDiv.className = 'message ' + (sent ? 'sent' : 'received');
@@ -113,24 +113,38 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
 
         // Odeslání zprávy
         btnSend.onclick = () => {
-            const content = document.getElementById("messageInput").value;
+            const content = document.getElementById("messageInput").value.trim();
             const file = document.getElementById("fileInput").files;
             const folder = document.getElementById("folderInput").files;
-            if(!content.trim()) return;
+
+            if (!content) return;
+
+            let attachmentType = null;
+            let attachmentPath = null;
+
+            if (file && file.length > 0) {
+                attachmentType = "file";
+                attachmentPath = file[0].path || file[0].name;
+            } else if (folder && folder.length > 0) {
+                attachmentType = "folder";
+                attachmentPath = folder[0].webkitRelativePath.split("/")[0]; // jen pokud folder.length > 0
+            }
 
             
             
-
-            addMessageToDOM(content, userId, new Date());
-
             vscode.postMessage({
                 type: "sendMessage",
                 message: content,
-                attachment: file
+                attachmentType: attachmentType,
+                attachmentPath: attachmentPath
             });
 
+            // reset inputů
             document.getElementById("messageInput").value = "";
+            fileInput.value = "";
+            folderInput.value = "";
         };
+
 
         // Vybrání souborů nebo složky
         btnAttachFile.onclick = () => fileInput.click();
@@ -191,7 +205,7 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
         window.addEventListener("message", (event) => {
             const data = event.data;
             if(data.type === "newMessage") {
-                addMessageToDOM(data.message.content, data.message.sender_id, data.message.created_at, data.message.id);
+                addMessageToDOM(data.message.content, data.sender, data.message.created_at, data.message.id);
             }
         });
     </script>

@@ -6,20 +6,95 @@ const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { timeAgo } = require('./time');
 
-async function sendMessage(context, chatId, message) {
+
+async function uploadFile(supabase, chatId, filePath) {
+    const fileName = path.basename(filePath);
+    const absolutPath = path.resolve(fileName);
+    const fileBuffer = fs.readFileSync(absolutPath);
+    const storagePath = `${chatId}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+        .from('Chat-Files')
+        .upload(storagePath, fileBuffer, { upsert: true });
+
+    if (error) throw error;
+
+    const { publicUrl } = supabase.storage.from('Chat-Files').getPublicUrl(storagePath);
+    return publicUrl;
+}
+function getAllFiles(dirPath, arrayOfFiles = []) {
+    const files = fs.readdirSync(dirPath);
+
+    files.forEach(file => {
+        const fullPath = path.join(dirPath, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+            arrayOfFiles = getAllFiles(fullPath, arrayOfFiles);
+        } else {
+            arrayOfFiles.push(fullPath);
+        }
+    });
+
+    return arrayOfFiles;
+}
+async function uploadFolder(supabase, chatId, folderPath) {
+    const files = getAllFiles(folderPath);
+    const urls = [];
+
+    for (const filePath of files) {
+        const relativePath = path.relative(folderPath, filePath);
+        const storagePath = `${chatId}/${relativePath}`;
+        const fileBuffer = fs.readFileSync(filePath);
+
+        const { error } = await supabase.storage
+            .from('Chat-Files')
+            .upload(storagePath, fileBuffer, { upsert: true });
+
+        if (error) throw error;
+
+        const { publicUrl } = supabase.storage.from('Chat-Files').getPublicUrl(storagePath);
+        urls.push(publicUrl);
+    }
+
+    return urls; // vrátí URL všech souborů ve složce
+}
+
+
+async function sendMessage(context, chatId, message, attachmentPath, attachmentType) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
     const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
-
-    const userId = await loadUserId(context);
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const userId = await loadUserId(context);
+
+
+
+    if (attachmentType === 'file' && attachmentPath ) {
+        await uploadFile(supabase, chatId, attachmentPath);
+    } else if (attachmentType === 'folder' && attachmentPath) {
+
+        await uploadFolder(supabase, chatId, attachmentPath);
+    }
+
 
     const { data, error } = await supabase
         .from('messages')
         .insert([
-            { chat_id: chatId, sender_id: userId, content: message, created_at: new Date().toISOString() },
+            {
+                chat_id: chatId,
+                sender_id: userId,
+                content: message,
+                created_at: new Date().toISOString(),
+                attachment_url: attachmentPath,
+                attachment_type: attachmentType
+            },
         ]);
+
+    if (error) throw error;
+
+    return data;
 }
+
+
 
 async function getAllMessages(context, chatId) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
@@ -50,7 +125,7 @@ async function getAllMessages(context, chatId) {
 
 async function generateChatHtml(context, username, chat) {
     const userId = await loadUserId(context);
-    
+
     return `<div id="chat-${chat.id}" class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
     <div class="messageMeta">
         <span class="sender">${chat.sender_id == userId ? 'Ty' : username}</span>
