@@ -102,16 +102,21 @@ async function watchMessageTable(context, friendPanels, friendRoot, treeRefreshE
 
                 // pokud máme otevřený panel pro chat_id, pošleme zprávu
                 const panel = friendPanels.get(message.chat_id);
-                friendPanels.has
                 if (panel) {
                     panel.webview.postMessage({
                         type: 'newMessage',
-                        message
+                        message: message
                     });
-                }
 
-                // automatický refresh stromu
-                treeRefreshEvent.fire(friendRoot);
+                    const { data, error } = await supabase
+                        .from('messages')
+                        .update({is_seen: true})
+                        .eq('id', message.id);
+
+                }else treeRefreshEvent.fire(friendRoot);
+
+                
+                
             }
         );
 

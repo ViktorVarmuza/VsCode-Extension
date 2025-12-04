@@ -95,14 +95,15 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
         }
 
         // Přidání zprávy do DOM
-        function addMessageToDOM(content, senderId, createdAt) {
+        function addMessageToDOM(content, senderId, createdAt, id) {
             const sent = senderId === userId;
             const msgDiv = document.createElement("div");
+            msgDiv.id = 'chat-' + id;
             msgDiv.className = 'message ' + (sent ? 'sent' : 'received');
             msgDiv.innerHTML = 
                 '<div class="messageMeta">' +
                     '<span class="sender">' + (sent ? 'Ty' : friendName) + '</span>' +
-                    '<span class="time">' + timeAgo(createdAt) + '</span>' +
+                    '<span class="time">' + timeAgo(new Date(createdAt)) + '</span>' +
                 '</div>' +
                 '<div class="messageContent">' + content + '</div>';
 
@@ -190,7 +191,7 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
         window.addEventListener("message", (event) => {
             const data = event.data;
             if(data.type === "newMessage") {
-                addMessageToDOM(data.message.content, data.message.sender_id, data.message.created_at);
+                addMessageToDOM(data.message.content, data.message.sender_id, data.message.created_at, data.message.id);
             }
         });
     </script>

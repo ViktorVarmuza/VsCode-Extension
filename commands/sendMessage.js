@@ -50,8 +50,8 @@ async function getAllMessages(context, chatId) {
 
 async function generateChatHtml(context, username, chat) {
     const userId = await loadUserId(context);
-
-    return `<div class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
+    
+    return `<div id="chat-${chat.id}" class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
     <div class="messageMeta">
         <span class="sender">${chat.sender_id == userId ? 'Ty' : username}</span>
         <span class="time">${timeAgo(chat.created_at)}</span>
