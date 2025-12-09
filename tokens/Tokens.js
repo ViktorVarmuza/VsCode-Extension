@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
+//prace s tokenami a Id 
 function saveTokens(context, tokens, id) {
     context.globalState.update('supabaseTokens', tokens);
     context.globalState.update('userId', id);

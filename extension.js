@@ -12,28 +12,37 @@ const path = require("path");
 const fs = require("fs");
 
 const { watchFriendsTable, watchRequestTable, watchMessageTable } = require('./sessions/Sessions');
+const { RtcRegister } = require('./sessions/RtcServer');
+const { openIncomingCall, openGoingCall } = require('./commands/call')
 
+// globalne nastaveny ws WebSocket
+let ws = null;
 
 function activate(context) {
     const friendPanels = new Map();
+    //všechny friendPanely
 
     const treeRefreshEvent = new vscode.EventEmitter();
+    //tree EventEmmiter resetuje tree a nekolik dalsich veci umi 
 
     // ------------------------------
     //   🌳 TREE DATA PROVIDER
     // ------------------------------
+
+    //Cast stromu s kamarady
     const friendsRoot = {
         type: "friendsRoot",
         label: "👥 Přátelé",
         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
     };
+    //Cast kamaradu kde jsou jenom Requesty
     const friendRequestsRoot = {
         type: "friendRequestsRoot",
         label: "📨 Žádosti",
         description: "5 nových ",
         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
     };
-
+    //generovani TreeView
     const treeDataProvider = {
         onDidChangeTreeData: treeRefreshEvent.event,
 
@@ -49,10 +58,13 @@ function activate(context) {
                     ];
                 }
 
+                RtcRegister(context, ws);
                 watchFriendsTable(context, treeRefreshEvent, friendsRoot);
                 watchRequestTable(context, treeRefreshEvent, friendsRoot);
                 watchMessageTable(context, friendPanels, friendsRoot, treeRefreshEvent);
-                online(context);
+                online(context, treeRefreshEvent);
+                context.subscriptions.push(openGoingCall(context, context.extensionUri, ws));
+
 
                 return [
                     { type: "folder", label: "📁 Moje projekty", collapsibleState: vscode.TreeItemCollapsibleState.Collapsed },
@@ -64,9 +76,9 @@ function activate(context) {
 
             // Přátelé
             if (element.type === "friendsRoot") {
-                const friends = await getAllFriends(context, treeRefreshEvent);
+                const friends = await getAllFriends(context, treeRefreshEvent, ws);
                 const requests = await allFriendsRequests(context, treeRefreshEvent);
-            
+
                 // uložíme do friendRequestsRoot nejen description, ale i data
                 friendRequestsRoot.description = requests.length > 0 ? `${requests.length}` : "";
                 friendRequestsRoot.requestsData = requests; // ← uložené jako pole
@@ -132,6 +144,8 @@ function activate(context) {
     context.subscriptions.push(LookupUsers(context, treeRefreshEvent));
     context.subscriptions.push(handleFriendRequest(context, treeRefreshEvent));
     context.subscriptions.push(openFriend(context, context.extensionUri, friendPanels));
+    context.subscriptions.push(openIncomingCall(context, context.extensionUri));
+
 
     // Project opener
     context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {
@@ -139,7 +153,14 @@ function activate(context) {
     }));
 
 }
+//funkce se spustí po vypnutí extensionu nebo vscodu :D
+function deactivate() {
+    if (ws) {
+        console.log("Closing WebSocket connection...");
+        ws.close();
+        ws = null;
+    }
 
-function deactivate() { }
+}
 
 module.exports = { activate, deactivate };

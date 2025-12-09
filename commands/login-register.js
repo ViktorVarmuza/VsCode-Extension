@@ -37,6 +37,7 @@ function LoginCommand(Uri, treeRefreshEvent, context) {
     })
 }
 
+//Register command ktery se pak pridava do extension kdyz se otevre login okno
 function RegisterCommand(Uri, treeRefreshEvent, context) {
 
     const Register_metoda = vscode.commands.registerCommand('share.register', () => {

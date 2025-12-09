@@ -4,6 +4,15 @@ const { loadTokens, loadUserId } = require('../tokens/Tokens');
 const path = require("path");
 const fs = require("fs");
 const { generateChatHtml } = require("../commands/sendMessage");
+
+//---------------------------------------------------------------------
+//  ||    všechny real time naslouchani databazi na změny jsou zde ||
+//  ||                                                             ||
+//  VV                                                             VV 
+
+
+
+
 async function watchFriendsTable(context, treeRefreshEvent, friendsRoot) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');

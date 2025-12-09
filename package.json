@@ -4,7 +4,7 @@
   "description": "super",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.106.0"
+    "vscode": "^1.106.0" 
   },
   "categories": [
     "Other"
@@ -53,6 +53,7 @@
     "eslint": "^9.39.1"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.84.0"
+    "@supabase/supabase-js": "^2.84.0",
+    "ws": "^8.18.3"
   }
 }

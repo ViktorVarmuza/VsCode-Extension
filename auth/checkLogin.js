@@ -3,6 +3,8 @@ const { saveTokens, loadTokens } = require('../tokens/Tokens');
 const fs = require('fs');
 const path = require('path');
 
+
+//Zkontroluje Platnost uživatelova přihlášení
 async function checkAuth(context) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');

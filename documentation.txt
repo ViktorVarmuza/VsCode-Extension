@@ -5,3 +5,5 @@
 22.11 logout funkce
 23.11 odesilani od uzivatele na server ze je online, vyhledávání uzivatelů v poli
 26.11 moznost poslat zadost na pratelstvi, muzeme si pridat pritele do databaze nebo odmitnout jeste ale nezobrazuje pratele z databaze
+4.12 Chat funguje a práce na posilani souboru se zpravou
+6-9.12 Prace na Volani a RTC serveru ktery uz funguje na localhostovi ale volani je jeste velice daleko

@@ -6,7 +6,6 @@ const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { timeAgo } = require('./time');
 
-
 async function uploadFile(supabase, chatId, filePath) {
     const fileName = path.basename(filePath);
     const absolutPath = path.resolve(fileName);

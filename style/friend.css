@@ -167,3 +167,22 @@ html, body {
     background: rgba(255, 255, 255, 0.04);
     border-radius: 8px;
 }
+.call-wrapper {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 30px; /* mezera mezi jménem a tlačítky */
+}
+
+.call-buttons {
+    display: flex;
+    gap: 20px;
+}
+.call-buttons-wrapper {
+    display: flex;
+    justify-content: center; /* horizontálně doprostřed */
+    gap: 20px; /* mezera mezi tlačítky */
+    margin-top: 30px;
+}

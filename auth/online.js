@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
+//Odesílá do databáze kazdych 60 sekund oznameni ze jsi online
 async function online(context, treeRefreshEvent) {
 
     async function updateOnline() {

@@ -8,6 +8,7 @@ const vscode = require('vscode');
 const { getFriendHtml } = require('../view/friend');
 const { sendMessage, newMessage } = require('./sendMessage');
 
+//vyhledává uživatele a doporučuje je v quickpicku 
 function LookupUsers(context, treeRefreshEvent) {
     const Register_metoda = vscode.commands.registerCommand('share.lookupUsers', async () => {
         const login = await checkAuth(context);
@@ -60,7 +61,7 @@ function LookupUsers(context, treeRefreshEvent) {
 
 
 }
-
+//pomocna funkce pro tu ktera ukazuje uzivatele a doplnuje v showpicku na kliknuti na nejakeho se zapne tahle funkce a posle to request uzivatelovi
 async function addFriend(context, username) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
@@ -135,6 +136,7 @@ async function addFriend(context, username) {
     );
 }
 
+//Získá všechny FriendRequesty a vrátí je to a každému přidá command na prijati
 async function allFriendsRequests(context, treeRefreshEvent) {
     const login = await checkAuth(context);
 
@@ -193,9 +195,10 @@ async function allFriendsRequests(context, treeRefreshEvent) {
 
 }
 
+//Přijmání a odmítání žádostí od uživatelů na přátelství
 function handleFriendRequest(context, treeRefreshEvent) {
     const disposable = vscode.commands.registerCommand('share.handleFriendRequest', async (args) => {
-        const { request, user, databaze } = args; // ← rozbalíme oba objekty
+        const { request, user, databaze } = args; 
 
         const options = ['Přijmout', 'Odmítnout'];
 
@@ -259,7 +262,8 @@ function handleFriendRequest(context, treeRefreshEvent) {
     context.subscriptions.push(disposable);
 }
 
-async function getAllFriends(context, treeRefreshEvent) {
+// Vrací všechny tvé přátelé a přidava jim to kommand na otevreni chatu
+async function getAllFriends(context, treeRefreshEvent, ws) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
     const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
@@ -299,7 +303,7 @@ async function getAllFriends(context, treeRefreshEvent) {
             label: friendUser.username,
             description: new_chats > 0 ? `💬 ${new_chats} nových zpráv` : "",
             command: 'share.openFriend',
-            arguments: [{ Friend: friendUser, chatId: f.id }]
+            arguments: [{ Friend: friendUser, chatId: f.id, RTC: ws }]
         })  // <- zabaleno do jednoho objektu
 
     }
@@ -312,10 +316,10 @@ async function getAllFriends(context, treeRefreshEvent) {
 
 
 
-
+//otevira chat s Pritelem a provadi veskerou komunikaci mezi webview a node js
 function openFriend(context, extensionUri, friendPanels) {
     const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
-        const { Friend, chatId } = args;
+        const { Friend, chatId, ws } = args;
 
         let friendPanel;
         if (friendPanels.has(chatId)) {
@@ -344,7 +348,12 @@ function openFriend(context, extensionUri, friendPanels) {
         friendPanel.webview.onDidReceiveMessage(async (message) => {
             if (message.type === 'sendMessage') {
                 sendMessage(context, chatId, message.message, message.attachmentPath, message.attachmentType);
+            }else if(message.type === 'startCall'){
+                vscode.commands.executeCommand('share.openGoingCall', {
+                    Friend:Friend
+                })
             }
+            
         });
 
         context.subscriptions.push(friendPanel);

@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path');
 const { saveTokens } = require('../tokens/Tokens')
 
+//registrace :D
 async function signUpWithEmail(email, password, username, context) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
     const key_path = path.join(__dirname, '../key.key');
