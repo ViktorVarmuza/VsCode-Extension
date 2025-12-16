@@ -7,6 +7,7 @@ const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { getFriendHtml } = require('../view/friend');
 const { sendMessage, newMessage } = require('./sendMessage');
+const os = require("os");
 
 //vyhledává uživatele a doporučuje je v quickpicku 
 function LookupUsers(context, treeRefreshEvent) {
@@ -198,7 +199,7 @@ async function allFriendsRequests(context, treeRefreshEvent) {
 //Přijmání a odmítání žádostí od uživatelů na přátelství
 function handleFriendRequest(context, treeRefreshEvent) {
     const disposable = vscode.commands.registerCommand('share.handleFriendRequest', async (args) => {
-        const { request, user, databaze } = args; 
+        const { request, user, databaze } = args;
 
         const options = ['Přijmout', 'Odmítnout'];
 
@@ -347,13 +348,22 @@ function openFriend(context, extensionUri, friendPanels) {
 
         friendPanel.webview.onDidReceiveMessage(async (message) => {
             if (message.type === 'sendMessage') {
-                sendMessage(context, chatId, message.message, message.attachmentPath, message.attachmentType);
-            }else if(message.type === 'startCall'){
+                sendMessage(context, chatId, message.message, message.attachmentName, message.attachmentType, message.attachmentData);
+            } else if (message.type === 'startCall') {
                 vscode.commands.executeCommand('share.openGoingCall', {
-                    Friend:Friend
+                    Friend: Friend
                 })
+            } else if (message.type === 'openAttachment') {
+
+                try {
+                    vscode.env.openExternal(vscode.Uri.parse(message.url));
+                    vscode.window.showInformationMessage('Stahování uspěšné');
+                } catch (err){
+                    vscode.window.showErrorMessage('stahování se nepovedlo :(');
+                }
+                
             }
-            
+
         });
 
         context.subscriptions.push(friendPanel);

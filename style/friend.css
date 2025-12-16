@@ -9,7 +9,8 @@
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
     background: var(--bg);
@@ -167,22 +168,61 @@ html, body {
     background: rgba(255, 255, 255, 0.04);
     border-radius: 8px;
 }
+
 .call-wrapper {
     height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 30px; /* mezera mezi jménem a tlačítky */
+    gap: 30px;
+    /* mezera mezi jménem a tlačítky */
 }
 
 .call-buttons {
     display: flex;
     gap: 20px;
 }
+
 .call-buttons-wrapper {
     display: flex;
-    justify-content: center; /* horizontálně doprostřed */
-    gap: 20px; /* mezera mezi tlačítky */
+    justify-content: center;
+    /* horizontálně doprostřed */
+    gap: 20px;
+    /* mezera mezi tlačítky */
     margin-top: 30px;
+}
+
+.attachment {
+    margin-top: 6px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.message.received .attachment {
+    justify-content: flex-start;
+}
+
+.attachment-btn {
+    background: rgba(16, 185, 129, 0.12);
+    /* accent zelená */
+    color: var(--accent);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.attachment-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.6);
+}
+
+.attachment-btn:active {
+    transform: scale(0.97);
 }

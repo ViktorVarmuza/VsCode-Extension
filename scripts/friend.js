@@ -1,6 +1,8 @@
 // API VS Code
 const vscode = acquireVsCodeApi();
 
+
+
 // Elementy
 const messagesDiv = document.getElementById("messages");
 const btnSend = document.getElementById("btnSend");
@@ -40,54 +42,120 @@ function timeAgo(date) {
 }
 
 // Přidání zprávy do DOM
-function addMessageToDOM(content, sender, createdAt, id) {
+// Přidání zprávy do DOM
+function addMessageToDOM(message, sender) {
     const sent = sender === "sent";
     const msgDiv = document.createElement("div");
-    msgDiv.id = "chat-" + id;
+    msgDiv.id = "chat-" + message.id;
     msgDiv.className = "message " + (sent ? "sent" : "received");
 
-    msgDiv.innerHTML =
-        '<div class="messageMeta">' +
-        '<span class="sender">' + (sent ? "Ty" : friendName) + '</span>' +
-        '<span class="time">' + timeAgo(new Date(createdAt)) + '</span>' +
-        "</div>" +
-        '<div class="messageContent">' + content + "</div>";
+    // HTML zprávy
+    msgDiv.innerHTML = `
+        <div class="messageMeta">
+            <span class="sender">${sent ? "Ty" : friendName}</span>
+            <span class="time">${timeAgo(new Date(message.created_at))}</span>
+        </div>
+
+        <div class="messageContent">
+            ${message.content || ""}
+        </div>
+
+        ${message.attachment_url
+            ? `<div class="attachment">
+                        <button 
+                            class="attachment-btn"
+                            data-url="${message.attachment_url}"
+                            data-id="${message.id}"
+                        >
+                            📎 Stáhnout přílohu
+                        </button>
+                   </div>`
+            : ""
+        }
+    `;
 
     messagesDiv.appendChild(msgDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+
+
+document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("attachment-btn")) {
+        const url = e.target.dataset.url;
+
+        vscode.postMessage({
+            type: "openAttachment",
+            url: url
+        });
+    }
+});
+
+
 // Odeslání zprávy
-btnSend.onclick = () => {
+btnSend.onclick = async () => {
     const content = messageInput.value.trim();
     const file = fileInput.files;
     const folder = folderInput.files;
 
-    if (!content) return;
+    if (!content && (!file || file.length === 0) && (!folder || folder.length === 0)) return;
 
     let attachmentType = null;
-    let attachmentPath = null;
+    let attachmentData = null;
+    let attachmentName = null;
 
+    // jednotlivý soubor (ZIP nevytváříme)
     if (file && file.length > 0) {
+        const f = file[0];
+        const buffer = await f.arrayBuffer();
         attachmentType = "file";
-        attachmentPath = file[0].path || file[0].name;
-    } else if (folder && folder.length > 0) {
+        attachmentName = f.name;
+        attachmentData = arrayBufferToBase64(buffer);
+    }
+    // složka - pouze pokud jsou folderInput.files
+    else if (folder && folder.length > 0) {
+        const JSZip = window.JSZip; // musíš mít JSZip načtený
+        const zip = new JSZip();
+
+        for (const f of folder) {
+            const buffer = await f.arrayBuffer();
+            const relativePath = f.webkitRelativePath; // zachová strukturu složky
+            zip.file(relativePath, buffer);
+        }
+
+        const zipContent = await zip.generateAsync({ type: "base64" });
         attachmentType = "folder";
-        attachmentPath = folder[0].webkitRelativePath.split("/")[0];
+        attachmentName = folder[0].webkitRelativePath.split("/")[0]; // název složky
+        attachmentData = zipContent;
     }
 
     vscode.postMessage({
         type: "sendMessage",
         message: content,
-        attachmentType: attachmentType,
-        attachmentPath: attachmentPath
+        attachmentType,
+        attachmentName,
+        attachmentData
     });
 
-    // reset vstupů
+    // reset inputů
     messageInput.value = "";
     fileInput.value = "";
     folderInput.value = "";
+
+    showThumbnails(null);
 };
+
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+
 btnCall.onclick = () => {
     vscode.postMessage({
         type: "startCall"
@@ -150,10 +218,8 @@ window.addEventListener("message", (event) => {
     const data = event.data;
     if (data.type === "newMessage") {
         addMessageToDOM(
-            data.message.content,
-            data.sender,
-            data.message.created_at,
-            data.message.id
+            data.message,
+            data.sender
         );
     }
 });

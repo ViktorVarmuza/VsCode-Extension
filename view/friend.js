@@ -1,7 +1,6 @@
 const vscode = require('vscode');
 const { timeAgo } = require('../commands/time');
 const { getChatHtml } = require('../commands/sendMessage');
-
 //Vrací html pro chat s kamaradem
 
 async function getFriendHtml(Friend, extensionUri, webview, chatId, context, userId) {
@@ -11,6 +10,9 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
     const scriptUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionUri, 'scripts', 'friend.js')
     );
+    const zipUri = webview.asWebviewUri(
+        vscode.Uri.joinPath(extensionUri, 'jszip.min.js')
+    )
 
     const last_online = timeAgo(new Date(Friend.last_online));
     const chatHtml = await getChatHtml(context, Friend.username, chatId);
@@ -70,6 +72,7 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
     </div>
 
     <!-- Toto musí být NAD scriptem -->
+    <script src="${zipUri}"></script>
     <script>
         const userId = ${userId};
         const friendName = "${Friend.username}";
