@@ -220,9 +220,43 @@ body {
 
 .attachment-btn:hover {
     background: rgba(16, 185, 129, 0.2);
-    border-color: rgba(16, 185, 129, 0.6);
+    border-color: rgba(34, 39, 37, 0.6);
 }
 
 .attachment-btn:active {
     transform: scale(0.97);
+}
+
+.messageContent img.chat-image {
+    max-width: 200px; /* omezení šířky obrázku */
+    max-height: 200px; /* omezení výšky obrázku */
+    border-radius: 12px;
+    display: block;
+    margin-top: 6px;
+}
+
+.message .attachment-btn {
+    margin-top: 4px;
+}
+
+.message.sent {
+
+    color: white;
+}
+
+.message.received {
+    background-color: #111827; /* tmavá pro příchozí */
+    color: #fff;
+}
+
+.message.sent .attachment-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #1f6feb;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.message.received .attachment-btn {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(16, 185, 129, 0.35);
 }

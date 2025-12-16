@@ -5,6 +5,7 @@ const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { timeAgo } = require('./time');
+const { isImageUrl } = require('./image');
 
 
 async function sendMessage(context, chatId, message, attachmentName, attachmentType, attachmentData) {
@@ -89,6 +90,7 @@ async function getAllMessages(context, chatId) {
 
 async function generateChatHtml(context, username, chat) {
     const userId = await loadUserId(context);
+    const img = isImageUrl(chat.attachment_url);
 
     return `<div id="chat-${chat.id}" class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
         <div class="messageMeta">
@@ -97,19 +99,17 @@ async function generateChatHtml(context, username, chat) {
         </div>
         <div class="messageContent">
             ${chat.content || ''}
+            ${chat.attachment_url ? (img ? `<img src="${chat.attachment_url}" alt="Příloha" class="chat-image" />` : '') : ''}
         </div>
-        <div class="attachment">
-            ${chat.attachment_url
-            ? `<button class="attachment-btn" 
+        ${chat.attachment_url ? `<button class="attachment-btn" 
                                data-url="${chat.attachment_url}" 
                                data-id="${chat.id}">
                            📎 Stáhnout přílohu
-                       </button>`
-            : ''
-        }
-        </div>
+                       </button>` : ''}
     </div>`;
 }
+
+
 
 
 async function getChatHtml(context, username, chatId) {

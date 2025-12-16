@@ -43,13 +43,19 @@ function timeAgo(date) {
 
 // Přidání zprávy do DOM
 // Přidání zprávy do DOM
-function addMessageToDOM(message, sender) {
+function isImageUrl(url) {
+    return /\.(png|jpg|jpeg|gif|webp)$/i.test(url);
+}
+
+function addMessageToDOM(message, sender, friendName) {
     const sent = sender === "sent";
     const msgDiv = document.createElement("div");
     msgDiv.id = "chat-" + message.id;
     msgDiv.className = "message " + (sent ? "sent" : "received");
 
-    // HTML zprávy
+    // Zkontrolujeme, zda attachment je obrázek
+    const isImg = message.attachment_url && isImageUrl(message.attachment_url);
+
     msgDiv.innerHTML = `
         <div class="messageMeta">
             <span class="sender">${sent ? "Ty" : friendName}</span>
@@ -58,25 +64,20 @@ function addMessageToDOM(message, sender) {
 
         <div class="messageContent">
             ${message.content || ""}
+            ${isImg ? `<img src="${message.attachment_url}" alt="Příloha" class="chat-image" />` : ""}
         </div>
 
-        ${message.attachment_url
-            ? `<div class="attachment">
-                        <button 
-                            class="attachment-btn"
-                            data-url="${message.attachment_url}"
-                            data-id="${message.id}"
-                        >
-                            📎 Stáhnout přílohu
-                        </button>
-                   </div>`
-            : ""
-        }
+        ${message.attachment_url ? `<button class="attachment-btn" 
+                                       data-url="${message.attachment_url}" 
+                                       data-id="${message.id}">
+                                   📎 Stáhnout přílohu
+                               </button>` : ''}
     `;
 
     messagesDiv.appendChild(msgDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
+
 
 
 
