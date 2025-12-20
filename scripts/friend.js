@@ -13,11 +13,20 @@ const folderInput = document.getElementById("folderInput");
 const selectedFilesSpan = document.getElementById("selectedFiles");
 const messageInput = document.getElementById("messageInput");
 const btnCall = document.getElementById("btnCall");
+const resetAttach = document.getElementById("resetAttach");
 // Tyto proměnné se doplní přímo v HTML
 // const userId = ...;
 // const friendName = "...";
 
 // ENTER -> odeslání zprávy
+
+function scrollToBottom() {
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+
+scrollToBottom();
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -26,20 +35,7 @@ messageInput.addEventListener("keydown", (event) => {
 });
 
 // Funkce pro relativní čas
-function timeAgo(date) {
-    const now = new Date();
-    const past = new Date(date);
-    const diff = (now - past) / 1000;
 
-    if (diff < 30) return "právě teď";
-    if (diff < 60) return "před pár vteřinami";
-    if (diff < 3600) return "před " + Math.floor(diff / 60) + " minutami";
-    if (diff < 3600 * 24) return "před " + Math.floor(diff / 3600) + " hodinami";
-
-    const days = Math.floor(diff / (3600 * 24));
-    if (days === 1) return "včera";
-    return "před " + days + " dny";
-}
 
 // Přidání zprávy do DOM
 // Přidání zprávy do DOM
@@ -47,50 +43,14 @@ function isImageUrl(url) {
     return /\.(png|jpg|jpeg|gif|webp)$/i.test(url);
 }
 
-function addMessageToDOM(message, sender, friendName) {
-    const sent = sender === "sent";
-    const msgDiv = document.createElement("div");
-    msgDiv.id = "chat-" + message.id;
-    msgDiv.className = "message " + (sent ? "sent" : "received");
-
-    // Zkontrolujeme, zda attachment je obrázek
-    const isImg = message.attachment_url && isImageUrl(message.attachment_url);
-
-    msgDiv.innerHTML = `
-        <div class="messageMeta">
-            <span class="sender">${sent ? "Ty" : friendName}</span>
-            <span class="time">${timeAgo(new Date(message.created_at))}</span>
-        </div>
-
-        <div class="messageContent">
-            ${message.content || ""}
-            ${isImg ? `<img src="${message.attachment_url}" alt="Příloha" class="chat-image" />` : ""}
-        </div>
-
-        ${message.attachment_url ? `<button class="attachment-btn" 
-                                       data-url="${message.attachment_url}" 
-                                       data-id="${message.id}">
-                                   📎 Stáhnout přílohu
-                               </button>` : ''}
-    `;
-
-    messagesDiv.appendChild(msgDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+function addMessageToDOM(messageHtml) {
+    messagesDiv.insertAdjacentHTML('beforeend', messageHtml);
+    scrollToBottom();
 }
 
 
 
 
-document.addEventListener("click", (e) => {
-    if (e.target.classList.contains("attachment-btn")) {
-        const url = e.target.dataset.url;
-
-        vscode.postMessage({
-            type: "openAttachment",
-            url: url
-        });
-    }
-});
 
 
 // Odeslání zprávy
@@ -142,7 +102,8 @@ btnSend.onclick = async () => {
     messageInput.value = "";
     fileInput.value = "";
     folderInput.value = "";
-
+    selectedFilesSpan.textContent = "";
+    resetAttach.style.display = "none"
     showThumbnails(null);
 };
 
@@ -166,15 +127,24 @@ btnCall.onclick = () => {
 btnAttachFile.onclick = () => fileInput.click();
 btnAttachFolder.onclick = () => folderInput.click();
 
+resetAttach.addEventListener('click', () => {
+    fileInput.value = "";
+    folderInput.value = "";
+    selectedFilesSpan.textContent = "";
+    resetAttach.style.display = "none";
+    showThumbnails(null)
+})
+
 // zobrazování náhledů obrázků
 function showThumbnails(file) {
     const container = document.getElementById("thumbnails");
     container.innerHTML = "";
 
-    if (!file.type.startsWith("image/")) return;
+    if (!file || !file.type || !file.type.startsWith("image/")) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
+
         const img = document.createElement("img");
         img.src = e.target.result;
         img.style.width = "30px";
@@ -186,12 +156,14 @@ function showThumbnails(file) {
     reader.readAsDataURL(file);
 }
 
+
 function handleFiles(files) {
     if (files.length === 0) {
         selectedFilesSpan.textContent = "Nic nebylo vybráno";
+        resetAttach.style.display = "none"
         return;
     }
-
+    resetAttach.style.display = "inline-flex";
     let name;
     const firstFile = files[0];
 
@@ -219,8 +191,7 @@ window.addEventListener("message", (event) => {
     const data = event.data;
     if (data.type === "newMessage") {
         addMessageToDOM(
-            data.message,
-            data.sender
+            data.message
         );
     }
 });

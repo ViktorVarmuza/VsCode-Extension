@@ -4,6 +4,7 @@ const { loadTokens, loadUserId } = require('../tokens/Tokens');
 const path = require("path");
 const fs = require("fs");
 const { generateChatHtml } = require("../commands/sendMessage");
+const { getUser } = require("../commands/getUserById");
 
 //---------------------------------------------------------------------
 //  ||    všechny real time naslouchani databazi na změny jsou zde ||
@@ -110,27 +111,34 @@ async function watchMessageTable(context, friendPanels, friendRoot, treeRefreshE
 
                 // pokud máme otevřený panel pro chat_id, pošleme zprávu
                 const panel = friendPanels.get(message.chat_id);
+                
+                if (userId !== message.sender_id) {
+                    vscode.window.showInformationMessage("Někdo ti poslal zprávu :D")
+
+                }
+
                 if (panel) {
+
+                    const user = await getUser(message.sender_id, context);
+
+                    const messageHtml = await generateChatHtml(context, user.username, message);
+
                     panel.webview.postMessage({
                         type: 'newMessage',
-                        message: message,
-                        sender: message.sender_id === userId ? "sent" : "received"
+                        message: messageHtml
                     });
 
-                    if( userId !== message.sender_id){
-                        vscode.window.showInformationMessage("Někdo ti poslal zprávu :D")
 
-                    }
 
                     const { data, error } = await supabase
                         .from('messages')
-                        .update({is_seen: true})
+                        .update({ is_seen: true })
                         .eq('id', message.id);
 
-                }else treeRefreshEvent.fire(friendRoot);
+                } else treeRefreshEvent.fire(friendRoot);
 
-                
-                
+
+
             }
         );
 

@@ -90,25 +90,106 @@ async function getAllMessages(context, chatId) {
 
 async function generateChatHtml(context, username, chat) {
     const userId = await loadUserId(context);
-    const img = isImageUrl(chat.attachment_url);
+    const isImg = chat.attachment_url && isImageUrl(chat.attachment_url);
+    const filename = chat.attachment_url
+        ? getFileNameFromUrl(chat.attachment_url)
+        : null;
 
-    return `<div id="chat-${chat.id}" class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
+    let fileIcon = chat.attachment_type === "file"
+        ? getFileIcon(filename)
+        : "📁";
+
+    return `
+    <div id="chat-${chat.id}" class="message ${chat.sender_id == userId ? 'sent' : 'received'}">
+
         <div class="messageMeta">
             <span class="sender">${chat.sender_id == userId ? 'Ty' : username}</span>
             <span class="time">${timeAgo(chat.created_at)}</span>
         </div>
+
         <div class="messageContent">
-            ${chat.content || ''}
-            ${chat.attachment_url ? (img ? `<img src="${chat.attachment_url}" alt="Příloha" class="chat-image" />` : '') : ''}
+            ${chat.content ? `<div class="text">${chat.content}</div>` : ""}
+
+            ${chat.attachment_url
+            ? isImg
+                ? `<img src="${chat.attachment_url}"
+                           alt="${filename}"
+                           class="chat-image" />`
+                : `<a class="file-attachment"
+                           href="${chat.attachment_url}"
+                           download="${filename}">
+                           <span class="file-icon">${fileIcon}</span>
+                           <span class="file-name">${filename}</span>
+                       </a>`
+            : ""
+        }
         </div>
-        ${chat.attachment_url ? `<button class="attachment-btn" 
-                               data-url="${chat.attachment_url}" 
-                               data-id="${chat.id}">
-                           📎 Stáhnout přílohu
-                       </button>` : ''}
+
+        ${chat.attachment_url && isImg
+            ? `<a class="attachment-btn"
+                 href="${chat.attachment_url}"
+                 download="${filename}">
+                 📎 Stáhnout
+               </a>`
+            : ""
+        }
     </div>`;
 }
 
+
+
+
+
+function getFileNameFromUrl(url) {
+    try {
+        const u = new URL(url);
+        return u.pathname.split("/").pop();
+    } catch {
+        return null;
+    }
+}
+
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+
+    const map = {
+        // dokumenty
+        pdf: "📕",
+        doc: "📄",
+        docx: "📝",
+        xls: "📊",
+        xlsx: "📊",
+        ppt: "📈",
+        pptx: "📈",
+        txt: "📃",
+
+        // obrázky
+        png: "🖼️",
+        jpg: "🖼️",
+        jpeg: "🖼️",
+        gif: "🖼️",
+        webp: "🖼️",
+
+        // archivy
+        zip: "🗜️",
+        rar: "🗜️",
+        "7z": "🗜️",
+
+        // kód
+        js: "🧠",
+        html: "🌐",
+        css: "🎨",
+        json: "🔧",
+
+        // audio / video
+        mp3: "🎵",
+        wav: "🎵",
+        mp4: "🎬",
+        mkv: "🎬"
+    };
+
+    return map[ext] || "📄";
+}
 
 
 

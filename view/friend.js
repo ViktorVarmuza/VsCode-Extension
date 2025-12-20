@@ -60,7 +60,9 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
             <!-- Buttons -->
             <button class="btn" id="btnAttachFile" title="Připojit soubor">📄</button>
             <button class="btn" id="btnAttachFolder" title="Připojit složku">📁</button>
+            <button class="btn btn-reset" id="resetAttach" title="Zrušit výběr">✖</button>
 
+            
             <div>
                 <div id="thumbnails" class="thumbnails"></div>
                 <span id="selectedFiles" class="selectedFiles"></span>

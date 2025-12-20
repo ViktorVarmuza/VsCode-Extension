@@ -6,7 +6,7 @@ const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const vscode = require('vscode');
 const { getFriendHtml } = require('../view/friend');
-const { sendMessage, newMessage } = require('./sendMessage');
+const { sendMessage, newMessage, generateChatHtml } = require('./sendMessage');
 const os = require("os");
 
 //vyhledává uživatele a doporučuje je v quickpicku 
@@ -353,17 +353,7 @@ function openFriend(context, extensionUri, friendPanels) {
                 vscode.commands.executeCommand('share.openGoingCall', {
                     Friend: Friend
                 })
-            } else if (message.type === 'openAttachment') {
-
-                try {
-                    vscode.env.openExternal(vscode.Uri.parse(message.url));
-                    vscode.window.showInformationMessage('Stahování uspěšné');
-                } catch (err){
-                    vscode.window.showErrorMessage('stahování se nepovedlo :(');
-                }
-                
-            }
-
+            } 
         });
 
         context.subscriptions.push(friendPanel);

@@ -15,10 +15,12 @@ const { watchFriendsTable, watchRequestTable, watchMessageTable } = require('./s
 const { RtcRegister } = require('./sessions/RtcServer');
 const { openIncomingCall, openGoingCall } = require('./commands/call')
 
+const { getAllProjects, addProject, openProject } = require('./projects/project');
+
 // globalne nastaveny ws WebSocket
 let ws = null;
 
-function activate(context) {
+async function activate(context) {
     const friendPanels = new Map();
     //všechny friendPanely
 
@@ -42,6 +44,29 @@ function activate(context) {
         description: "5 nových ",
         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
     };
+    const ProjectRoot = {
+        type: "folder",
+        label: "📁 Moje projekty",
+        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+    };
+
+    const logeed = await checkAuth(context);
+    let watching = false;
+    if (logeed) {
+        sessions();
+    }
+
+    async function sessions() {
+        RtcRegister(context, ws);
+        watchFriendsTable(context, treeRefreshEvent, friendsRoot);
+        watchRequestTable(context, treeRefreshEvent, friendsRoot);
+        watchMessageTable(context, friendPanels, friendsRoot, treeRefreshEvent);
+        online(context, treeRefreshEvent);
+        context.subscriptions.push(openGoingCall(context, context.extensionUri, ws));
+        watching = true;
+    }
+
+
     //generovani TreeView
     const treeDataProvider = {
         onDidChangeTreeData: treeRefreshEvent.event,
@@ -50,6 +75,10 @@ function activate(context) {
             // ROOT
             if (!element) {
                 const logged = await checkAuth(context);
+                openProject(context);
+                if (watching === false) {
+                    sessions();
+                }
 
                 if (!logged) {
                     return [
@@ -58,21 +87,25 @@ function activate(context) {
                     ];
                 }
 
-                RtcRegister(context, ws);
-                watchFriendsTable(context, treeRefreshEvent, friendsRoot);
-                watchRequestTable(context, treeRefreshEvent, friendsRoot);
-                watchMessageTable(context, friendPanels, friendsRoot, treeRefreshEvent);
-                online(context, treeRefreshEvent);
-                context.subscriptions.push(openGoingCall(context, context.extensionUri, ws));
+
 
 
                 return [
-                    { type: "folder", label: "📁 Moje projekty", collapsibleState: vscode.TreeItemCollapsibleState.Collapsed },
+                    ProjectRoot,
                     friendsRoot, // ← uložený uzel
                     { type: "root", label: "⚙️ Nastavení", command: "share.settings" },
                     { type: "root", label: "🚪 Odhlásit se", command: "share.logout" },
                 ];
             }
+            if (element.type === "folder") {
+                const projects = await getAllProjects(context);
+
+                return [
+                    { type: "root", label: "➕ Přidat Projekt", command: "share.addProject" },
+                    ...projects
+                ];
+            }
+
 
             // Přátelé
             if (element.type === "friendsRoot") {
@@ -145,8 +178,8 @@ function activate(context) {
     context.subscriptions.push(handleFriendRequest(context, treeRefreshEvent));
     context.subscriptions.push(openFriend(context, context.extensionUri, friendPanels));
     context.subscriptions.push(openIncomingCall(context, context.extensionUri));
-
-
+    context.subscriptions.push(addProject(context, treeRefreshEvent, ProjectRoot));
+    
     // Project opener
     context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {
         vscode.window.showInformationMessage(`Otevírám projekt: ${item.label}`);
