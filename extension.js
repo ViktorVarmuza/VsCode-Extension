@@ -15,12 +15,17 @@ const { watchFriendsTable, watchRequestTable, watchMessageTable } = require('./s
 const { RtcRegister } = require('./sessions/RtcServer');
 const { openIncomingCall, openGoingCall } = require('./commands/call')
 
-const { getAllProjects, addProject, openProject } = require('./projects/project');
+const { getAllProjects, addProject, openProject, ChangeIcon, ChangeName, deleteProject } = require('./projects/project');
 
+const { openSetings } = require('./projects/setings');
 // globalne nastaveny ws WebSocket
 let ws = null;
 
 async function activate(context) {
+
+
+
+
     const friendPanels = new Map();
     //všechny friendPanely
 
@@ -50,6 +55,14 @@ async function activate(context) {
         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
     };
 
+
+    openProject(context);
+    ChangeIcon(context, treeRefreshEvent, ProjectRoot);
+    ChangeName(context, treeRefreshEvent, ProjectRoot);
+    deleteProject(context, treeRefreshEvent, ProjectRoot);
+    openSetings(context, context.extensionUri, treeRefreshEvent, ProjectRoot);
+
+
     const logeed = await checkAuth(context);
     let watching = false;
     if (logeed) {
@@ -62,6 +75,7 @@ async function activate(context) {
         watchRequestTable(context, treeRefreshEvent, friendsRoot);
         watchMessageTable(context, friendPanels, friendsRoot, treeRefreshEvent);
         online(context, treeRefreshEvent);
+
         context.subscriptions.push(openGoingCall(context, context.extensionUri, ws));
         watching = true;
     }
@@ -75,7 +89,10 @@ async function activate(context) {
             // ROOT
             if (!element) {
                 const logged = await checkAuth(context);
-                openProject(context);
+
+
+
+
                 if (watching === false) {
                     sessions();
                 }
@@ -145,19 +162,43 @@ async function activate(context) {
                 element.label,
                 element.collapsibleState ?? vscode.TreeItemCollapsibleState.None
             );
+
+            // Popis (volitelné)
             if (element.description) {
                 treeItem.description = element.description;
             }
+
+            // Ikona (volitelné)
+            if (element.iconPath) {
+                treeItem.iconPath = element.iconPath;
+            }
+
+            // Kontext pro menu (volitelné)
+            if (element.contextValue) {
+                treeItem.contextValue = element.contextValue;
+            }
+
+            // Command – zajišťuje, že arguments je vždy pole
             if (element.command) {
                 treeItem.command = {
                     command: element.command,
                     title: element.label,
-                    arguments: element.arguments
+                    arguments: element.arguments ? element.arguments : [element] // <--- KLÍČOVÉ
                 };
             }
 
+            // Tooltip (volitelné)
+            if (element.projectPath) {
+                treeItem.tooltip = element.projectPath;
+            }
+
+           
+
             return treeItem;
         }
+
+
+
     };
 
 
@@ -179,11 +220,6 @@ async function activate(context) {
     context.subscriptions.push(openFriend(context, context.extensionUri, friendPanels));
     context.subscriptions.push(openIncomingCall(context, context.extensionUri));
     context.subscriptions.push(addProject(context, treeRefreshEvent, ProjectRoot));
-    
-    // Project opener
-    context.subscriptions.push(vscode.commands.registerCommand("share.openProject", (item) => {
-        vscode.window.showInformationMessage(`Otevírám projekt: ${item.label}`);
-    }));
 
 }
 //funkce se spustí po vypnutí extensionu nebo vscodu :D

@@ -22,6 +22,7 @@ async function getFriendHtml(Friend, extensionUri, webview, chatId, context, use
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta http-equiv="Content-Security-Policy">
 <title>Chat</title>
 
 <link rel="stylesheet" href="${styleUri}" />

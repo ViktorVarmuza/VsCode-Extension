@@ -11,9 +11,8 @@ const os = require("os");
 
 //vyhledává uživatele a doporučuje je v quickpicku 
 function LookupUsers(context, treeRefreshEvent) {
-    const Register_metoda = vscode.commands.registerCommand('share.lookupUsers', async () => {
+    const disposable = vscode.commands.registerCommand('share.lookupUsers', async () => {
         const login = await checkAuth(context);
-
         if (!login) {
             treeRefreshEvent.fire();
             return;
@@ -22,11 +21,10 @@ function LookupUsers(context, treeRefreshEvent) {
         const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
         const key_path = path.join(__dirname, '../key.key');
         const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const tokens = await loadTokens(context);
         const userId = await loadUserId(context);
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const quickPick = vscode.window.createQuickPick();
         quickPick.placeholder = "Začni psát jméno uživatele...";
@@ -56,12 +54,11 @@ function LookupUsers(context, treeRefreshEvent) {
         });
 
         quickPick.show();
-
-
     });
 
-
+    return disposable
 }
+
 //pomocna funkce pro tu ktera ukazuje uzivatele a doplnuje v showpicku na kliknuti na nejakeho se zapne tahle funkce a posle to request uzivatelovi
 async function addFriend(context, username) {
     const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
@@ -187,7 +184,9 @@ async function allFriendsRequests(context, treeRefreshEvent) {
             type: "info",
             label: otherUser.username,
             command: 'share.handleFriendRequest',
-            arguments: [{ request: req, user: otherUser, databaze: supabase }]  // <- zabaleno do jednoho objektu
+            request: req,
+            user: otherUser,
+            databaze: supabase
         });
 
 
@@ -198,8 +197,10 @@ async function allFriendsRequests(context, treeRefreshEvent) {
 
 //Přijmání a odmítání žádostí od uživatelů na přátelství
 function handleFriendRequest(context, treeRefreshEvent) {
-    const disposable = vscode.commands.registerCommand('share.handleFriendRequest', async (args) => {
-        const { request, user, databaze } = args;
+    const disposable = vscode.commands.registerCommand('share.handleFriendRequest', async (item) => {
+        const request = item.request;
+        const user = item.user;
+        const databaze = item.databaze;
 
         const options = ['Přijmout', 'Odmítnout'];
 
@@ -304,7 +305,9 @@ async function getAllFriends(context, treeRefreshEvent, ws) {
             label: friendUser.username,
             description: new_chats > 0 ? `💬 ${new_chats} nových zpráv` : "",
             command: 'share.openFriend',
-            arguments: [{ Friend: friendUser, chatId: f.id, RTC: ws }]
+            Friend: friendUser,
+            chatId: f.id,
+            RTC: ws
         })  // <- zabaleno do jednoho objektu
 
     }
@@ -319,8 +322,11 @@ async function getAllFriends(context, treeRefreshEvent, ws) {
 
 //otevira chat s Pritelem a provadi veskerou komunikaci mezi webview a node js
 function openFriend(context, extensionUri, friendPanels) {
-    const disposable = vscode.commands.registerCommand('share.openFriend', async (args) => {
-        const { Friend, chatId, ws } = args;
+    const disposable = vscode.commands.registerCommand('share.openFriend', async (item) => {
+        const Friend = item.Friend;
+        const chatId = item.chatId;
+        const ws = item.RTC;
+
 
         let friendPanel;
         if (friendPanels.has(chatId)) {
@@ -353,7 +359,7 @@ function openFriend(context, extensionUri, friendPanels) {
                 vscode.commands.executeCommand('share.openGoingCall', {
                     Friend: Friend
                 })
-            } 
+            }
         });
 
         context.subscriptions.push(friendPanel);

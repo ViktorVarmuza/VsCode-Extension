@@ -10,6 +10,7 @@ function getCallHeader(friendName) {
             <div class="meta">
                 <div class="username">${friendName}</div>
             </div>
+            <meta http-equiv="Content-Security-Policy">
         </div>
     `;
 }

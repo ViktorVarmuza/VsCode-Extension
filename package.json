@@ -14,6 +14,35 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "share.openProjekt",
+          "when": "view == mySidebarView && viewItem == projectItem",
+          "group": "navigation"
+        },
+        {
+          "command": "share.renameProject",
+          "when": "view == mySidebarView && viewItem == projectItem",
+          "group": "1_modification@1"
+        },
+        {
+          "command": "share.changeIcon",
+          "when": "view == mySidebarView && viewItem == projectItem",
+          "group": "1_modification@2"
+        },
+        {
+          "command": "share.projectSetings",
+          "when": "view == mySidebarView && viewItem == projectItem",
+          "group": "1_modification@3"
+        },
+        {
+          "command": "share.deleteProject",
+          "when": "view == mySidebarView && viewItem == projectItem",
+          "group": "2_danger"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -39,6 +68,26 @@
       {
         "command": "share.start",
         "title": "Okno"
+      },
+      {
+        "command": "share.openProjekt",
+        "title": "Otevřít složku"
+      },
+      {
+        "command": "share.renameProject",
+        "title": "Přejmenovat projekt"
+      },
+      {
+        "command": "share.deleteProject",
+        "title": "Odstranit projekt"
+      },
+      {
+        "command": "share.projectSetings",
+        "title": "Nastavení Projektu"
+      },
+      {
+        "command": "share.changeIcon",
+        "title": "Změnit ikonku"
       }
     ]
   },

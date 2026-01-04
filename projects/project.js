@@ -13,7 +13,6 @@ async function getAllProjects(context) {
     const userId = await loadUserId(context);
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-
     const { data: projects, error } = await supabase
         .from('user_projects')
         .select('*')
@@ -29,29 +28,175 @@ async function getAllProjects(context) {
     for (let f of projects) {
 
         allProjects.push({
-            type: "info",
+            type: "project",
             label: f.project_name,
-            command: 'share.openFolder',
-            arguments: [{ Path: f.project_path }]
-        })  // <- zabaleno do jednoho objektu
+            command: 'share.openProjekt',
+            projectPath: f.active_path, // 👈 DŮLEŽITÉ
+            contextValue: 'projectItem', // ← TOTO JE KLÍČ
+            iconPath: new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor(f.Color)),
+            id: f.id,
+        });
 
     }
 
     return allProjects;
 }
 
+const colorMap = {
+    green: 'charts.green',
+    red: 'charts.red',
+    yellow: 'charts.yellow',
+    orange: 'charts.orange',
+    blue: 'charts.blue',
+    purple: 'charts.purple',
+    white: 'foreground'
+};
+
+function ChangeIcon(context, treeRefreshEvent, ProjectRoot) {
+    const disposable = vscode.commands.registerCommand(
+        'share.changeIcon',
+        async (item) => {
+
+            const colorChoices = Object.keys(colorMap);
+
+            // showQuickPick
+            const choice = await vscode.window.showQuickPick(colorChoices, {
+                placeHolder: 'Vyberte barvu'
+            });
+
+            if (!choice) return; // zrušil výběr
+
+            const save = await SaveColor(choice, item);
+            treeRefreshEvent.fire(ProjectRoot);
+        }
+    );
+
+    context.subscriptions.push(disposable);
+}
+
+
+
+async function SaveColor(color, item) {
+    if (!color) return;
+
+
+
+    const colorKey = colorMap[color] || colorMap.white;
+
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+        .from('user_projects')
+        .update({ Color: colorKey })
+        .eq('id', item.id);
+
+    if (error) {
+        vscode.window.showErrorMessage(`Chyba při ukládání barvy: ${error.message}`);
+    } else {
+        vscode.window.showInformationMessage(`Barva projektu změněna na ${color}`);
+    }
+
+    return true;
+}
+
+async function SavePath(project_path, collumn, item) {
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+        .from('user_projects')
+        .update({ [collumn]: project_path })
+        .eq('id', item.id);
+
+    if (error) {
+        vscode.window.showErrorMessage(`Chyba při ukládání cesty: ${error.message}`);
+    } else {
+        vscode.window.showInformationMessage(`Cesta projektu změněna na ${project_path}`);
+    }
+    
+    const { data: project, error: err } = await supabase
+        .from('user_projects')
+        .select('*')
+        .eq('id', item.id);
+
+    if (error) {
+        vscode.window.showErrorMessage("Chyba při načítání projektu.");
+        return false;
+    }
+
+    return project[0];
+}
+
+
+function ChangeName(context, treeRefreshEvent, ProjectRoot) {
+    const disposable = vscode.commands.registerCommand(
+        'share.renameProject',
+        async (item) => {
+
+            const projectName = await vscode.window.showInputBox({
+                prompt: "Zadejte nové jméno",
+                value: item.label // defaultní hodnota = název složky
+            });
+
+            if (!projectName) {
+                vscode.window.showInformationMessage('nic nebylo zadané');
+                return;
+            }
+
+            const save = await SaveName(projectName, item);
+            treeRefreshEvent.fire(ProjectRoot);
+        }
+    );
+
+    context.subscriptions.push(disposable);
+}
+
+async function SaveName(name, item) {
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+        .from('user_projects')
+        .update({ project_name: name })
+        .eq('id', item.id);
+
+    if (error) {
+        vscode.window.showErrorMessage(`Chyba při ukládání jména: ${error.message}`);
+    } else {
+        vscode.window.showInformationMessage(`Jméno projektu změněno na ${name}`);
+    }
+
+    return true;
+}
+
+
 function openProject(context) {
-    const disposable = vscode.commands.registerCommand('share.openFolder', async (args) => {
-        const folderUri = vscode.Uri.file(args.Path);
-        const options = ['Ano', 'Ne'];
+    const disposable = vscode.commands.registerCommand(
+        'share.openProjekt',
+        async (item) => {
 
-        const choice = await vscode.window.showQuickPick(options, {
-            placeHolder: 'Otevřít v novém okně?'
-        });
-        
+            // item je VŽDY project element
+            const folderUri = vscode.Uri.file(item.projectPath);
 
-        vscode.commands.executeCommand('vscode.openFolder', folderUri, choice ==='Ano' ? true : false); // false = aktuální okno
-    });
+            const choice = await vscode.window.showQuickPick(
+                ['Ano', 'Ne'],
+                { placeHolder: 'Otevřít v novém okně?' }
+            );
+
+            vscode.commands.executeCommand(
+                'vscode.openFolder',
+                folderUri,
+                choice === 'Ano'
+            );
+        }
+    );
 
     context.subscriptions.push(disposable);
 }
@@ -98,7 +243,9 @@ async function addProject(context, treeRefreshEvent, ProjectRoot) {
             .from('user_projects')
             .insert({
                 user_id: userId,
+                active_path: projectPath,
                 project_path: projectPath,
+                project_path2: projectPath,
                 project_name: projectName,
             });
 
@@ -114,4 +261,51 @@ async function addProject(context, treeRefreshEvent, ProjectRoot) {
 }
 
 
-module.exports = { getAllProjects, addProject, openProject }
+function deleteProject(context, treeRefreshEvent, ProjectRoot) {
+    const disposable = vscode.commands.registerCommand(
+        'share.deleteProject',
+        async (item) => {
+            const choice = await vscode.window.showQuickPick(
+                ['Odstranit', 'Zrušit'],
+                { placeHolder: 'Vážně chcete odstranit projekt?' }
+            );
+
+            if (choice !== 'Odstranit') {
+                return;
+            }
+
+
+            const smazat = await removeProject(item, context);
+            if (smazat) {
+                treeRefreshEvent.fire(ProjectRoot);
+
+            }
+        }
+    );
+
+    context.subscriptions.push(disposable);
+
+}
+
+async function removeProject(item, context) {
+    const supabaseUrl = 'https://fujkzibyfivcdhuaqxuu.supabase.co';
+    const key_path = path.join(__dirname, '../key.key');
+    const supabaseKey = fs.readFileSync(key_path, 'utf8').trim();
+
+    const userId = await loadUserId(context);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: projects, error } = await supabase
+        .from('user_projects')
+        .delete()
+        .eq('id', item.id)
+
+    if (error) {
+        vscode.window.showErrorMessage('Chyba při mazání projektu')
+        return false;
+    }
+    return true
+}
+
+
+module.exports = { getAllProjects, addProject, openProject, ChangeIcon, ChangeName, deleteProject, colorMap, SaveColor, SaveName, SavePath }

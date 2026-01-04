@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+
+</head>
+<style>
+    :root {
+        --bg: #0f1720;
+        --panel: #0b1220;
+        --muted: #94a3b8;
+        --accent: #10b981;
+        font-family: Inter, system-ui;
+    }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: white;
+        font-size: 14px;
+    }
+
+    h2 {
+        text-align: center;
+    }
+
+    h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: auto;
+    }
+
+    .section-group {
+        background: #053e2b;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .section {
+        background: var(--panel);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+    label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+        margin-top: 6px;
+        width: 80%;
+        padding: 8px;
+        background: #020617;
+        border: 2px solid white;
+        border-radius: 10px;
+        color: white;
+    }
+
+    button {
+        margin-top: 8px;
+        padding: 6px 12px;
+        background: #053e2b;
+        border: 2px solid white;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+    }
+
+    .row {
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .edit-icon {
+        cursor: pointer;
+        opacity: 0.8;
+    }
+
+    .edit-icon:hover {
+        opacity: 1;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .radio-group label {
+        display: block;
+        font-weight: normal;
+    }
+
+    .danger {
+        background: rgba(255, 0, 0, 0.15);
+        text-align: center;
+    }
+
+    .danger button {
+        background: #c42b1c;
+    }
+
+    .info {
+        text-align: center;
+        background-color: #053e2b;
+    }
+
+    .github {
+        background: #1d0220;
+    }
+
+    .close-btn {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .close-btn:hover {
+        color: white;
+    }
+
+    .github-header {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .github-header:hover {
+        color: #e5e7eb;
+    }
+
+    .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 6px;
+        color: var(--muted);
+    }
+
+    /* switch container */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 24px;
+    }
+
+    /* hide default checkbox */
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    /* slider */
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #334155;
+        border-radius: 24px;
+        transition: 0.3s;
+    }
+
+    /* knob */
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: 0.3s;
+    }
+
+    /* ON state */
+    .switch input:checked+.slider {
+        background-color: var(--accent);
+    }
+
+    .switch input:checked+.slider:before {
+        transform: translateX(22px);
+    }
+
+    .sync-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .path-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .path-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+
+<body>
+
+    <div class="container">
+        <h2>⚙️ Nastavení projektu</h2>
+
+        <!-- GENERALS -->
+        <div class="section-group">
+            <h3>🧩 Generals</h3>
+
+            <div class="section">
+                <label>Název projektu</label>
+
+                <div class="row">
+                    <span id="projectName">My Super Project</span>
+                    <span class="edit-icon" onclick="enableEdit()">✏️</span>
+                </div>
+
+                <div id="editName" class="hidden">
+                    <input type="text" id="nameInput" value="My Super Project">
+                    <div>
+                        <button onclick="saveName()">Uložit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <label>🎨 Ikona projektu</label>
+                <div class="color-pick" style="background-color: #334593; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; margin: 10px 2px"></div>
+                <div class="radio-group">
+                    <label><input type="radio" name="icon" checked> Red</label>
+                    <label><input type="radio" name="icon"> Blue</label>
+                    <label><input type="radio" name="icon"> Green</label>
+                    <label><input type="radio" name="icon"> Yellow</label>
+                    <label><input type="radio" name="icon"> Orange</label>
+                    <label><input type="radio" name="icon"> Purple</label>
+                    <label><input type="radio" name="icon"> White</label>
+                </div>
+            </div>
+            <div class="section">
+                <label>📁 Lokální cesta k projektu</label>
+
+                <!-- CESTA 1 -->
+                <div class="path-row">
+                    <div class="path-left">
+                        <input type="radio" name="localPath" checked>
+                        <span id="path1Text">/home/user/my-project</span>
+                    </div>
+                    <button onclick="editPath(1)">Změnit</button>
+                </div>
+
+                <div id="path1Edit" class="hidden">
+                    <input type="text" id="path1Input" value="/home/user/my-project">
+                    <button onclick="savePath(1)">Uložit</button>
+                </div>
+
+                <!-- CESTA 2 -->
+                <div class="path-row">
+                    <div class="path-left">
+                        <input type="radio" name="localPath">
+                        <span id="path2Text">/mnt/data/backup-project</span>
+                    </div>
+                    <button onclick="editPath(2)">Změnit</button>
+                </div>
+
+                <div id="path2Edit" class="hidden">
+                    <input type="text" id="path2Input" value="/mnt/data/backup-project">
+                    <button onclick="savePath(2)">Uložit</button>
+                </div>
+            </div>
+
+
+
+            <div class="section">
+                <div class="sync-row">
+                    <label>🔐 Viditelnost projektu</label>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="projectVisibility" checked onchange="toggleVisibility()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- GITHUB -->
+        <!-- GITHUB (collapsible) -->
+        <div class="section-group github">
+            <h3 class="github-header" onclick="toggleGithub()">
+                🐙 GitHub (volitelné) <span id="githubArrow">▼</span>
+            </h3>
+
+            <div id="githubContent" class="">
+                <div class="section">
+                    <label>🔗 GitHub Projekt</label>
+                    <input type="text" placeholder="https://github.com/user/repository">
+                </div>
+                <div class="section">
+                    <label>🗂️ GitHub repozitář</label>
+                    <input type="text" placeholder="Repositary Name">
+                </div>
+                <div class="section">
+                    <div class="sync-row">
+                        <label>🔄 Automatická synchronizace</label>
+
+                        <div class="toggle-row">
+
+                            <label class="switch">
+                                <input type="checkbox" id="autoSync" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+        </div>
+
+
+        <!-- INFO -->
+        <div class="section info">
+            <label>ℹ️ Informace</label>
+            <div>ID: <code>8f3a-12dd-99aa</code></div>
+            <div>Vytvořen: 12. 10. 2025</div>
+        </div>
+
+        <!-- DANGER -->
+        <div class="section danger">
+            <label>⚠️ Nebezpečné akce</label>
+            <button>🗑 Odstranit projekt</button>
+        </div>
+    </div>
+
+    <script>
+        function enableEdit() {
+            document.getElementById("editName").classList.remove("hidden");
+        }
+
+        function saveName() {
+            const value = document.getElementById("nameInput").value;
+            document.getElementById("projectName").textContent = value;
+            document.getElementById("editName").classList.add("hidden");
+        }
+
+        function toggleGithub() {
+            document.getElementById("githubSection").classList.toggle("hidden");
+        }
+
+        function toggleGithub() {
+            const content = document.getElementById("githubContent");
+            const arrow = document.getElementById("githubArrow");
+
+            const isHidden = content.classList.toggle("hidden");
+            arrow.textContent = isHidden ? "▶" : "▼";
+        }
+
+
+
+    </script>
+
+</body>
+
+</html>

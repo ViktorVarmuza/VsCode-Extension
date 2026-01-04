@@ -60,6 +60,7 @@ function getRegisterHtml(webview, extensionUri) {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="Content-Security-Policy">
             <link rel="stylesheet" href="${styleUri}">
             <title>Registrace</title>
         </head>

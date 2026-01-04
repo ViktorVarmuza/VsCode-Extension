@@ -7,7 +7,7 @@ const { checkAuth } = require('../auth/checkLogin');
 //login command ktery se pak pridava do extension kdyz se otevre login okno :D
 function LoginCommand(Uri, treeRefreshEvent, context) {
 
-    const Login_metoda = vscode.commands.registerCommand('share.login', () => {
+    const Login_metoda = vscode.commands.registerCommand('share.login', (item) => {
         const panel = vscode.window.createWebviewPanel(
             'login-panel',
             'Login',
@@ -35,12 +35,14 @@ function LoginCommand(Uri, treeRefreshEvent, context) {
             }
         });
     })
+
+    return Login_metoda;
 }
 
 //Register command ktery se pak pridava do extension kdyz se otevre login okno
 function RegisterCommand(Uri, treeRefreshEvent, context) {
 
-    const Register_metoda = vscode.commands.registerCommand('share.register', () => {
+    const Register_metoda = vscode.commands.registerCommand('share.register', (item) => {
         const panel = vscode.window.createWebviewPanel(
             'register-panel',
             'Register',
@@ -69,7 +71,7 @@ function RegisterCommand(Uri, treeRefreshEvent, context) {
 
         })
     })
-
+    return Register_metoda;
 
 }
 
